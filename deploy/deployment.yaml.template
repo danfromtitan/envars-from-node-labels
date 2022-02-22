@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: envars-webhook
+  namespace: webhook
+  labels:
+    app: envars-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: envars-webhook
+  template:
+    metadata:
+      labels:
+        app: envars-webhook
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 99
+      containers:
+      - name: server
+        image: ${IMAGE_NAME}
+        imagePullPolicy: Always
+        env:
+        - name: GODEBUG
+          value: webhook2debug=0
+        ports:
+        - containerPort: 8443
+          name: webhook-api
+        volumeMounts:
+        - name: webhook-tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+      volumes:
+      - name: webhook-tls-certs
+        secret:
+          secretName: envars-webhook-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envars-webhook
+  namespace: webhook
+spec:
+  selector:
+    app: envars-webhook
+  ports:
+    - port: 443
+      targetPort: webhook-api
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: envars-webhook
+webhooks:
+  - name: envars-webhook.webhook.svc
+    admissionReviewVersions: ["v1"]
+    failurePolicy: Fail
+    sideEffects: None
+    timeoutSeconds: 30
+    clientConfig:
+      service:
+        name: envars-webhook
+        namespace: webhook
+        path: "/mutate"
+      caBundle: ${CA_PEM_B64}
+    namespaceSelector:
+      matchLabels:
+        name: samples
+    rules:
+      - operations: [ "CREATE", "UPDATE", "DELETE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods", "pods/binding"]
+        scope: '*'
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admission-controller-rbac
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admission-controller-rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admission-controller-rbac
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: webhook

@@ -1,0 +1,21 @@
+# pod has a single container that is allowed to receive env vars from node labels
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-allowed
+  namespace: samples
+  labels:
+    app: pod-allowed
+spec:
+  restartPolicy: OnFailure
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 99
+  containers:
+    - name: ingester
+      image: alpine
+      command: ["/bin/sh"]
+      args: ["-c", "env"]
+      envFrom:
+        - configMapRef:
+            name: env-configmap

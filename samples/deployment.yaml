@@ -1,0 +1,30 @@
+# deployment has a container that is allowed to receive env vars from node labels
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+  namespace: samples
+  labels:
+    app: sample
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sample
+  template:
+    metadata:
+      labels:
+        app: sample
+    spec:
+      containers:
+        - name: ingester
+          image: ubuntu
+          command: ["/bin/sh"]
+          args: ["-c", "sleep infinity"]
+          envFrom:
+            - configMapRef:
+                name: env-configmap
+            - secretRef:
+                name: env-secrets
+          ports:
+            - containerPort: 80
