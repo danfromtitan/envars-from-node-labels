@@ -19,7 +19,7 @@ IMAGE_NAME = $$(basename `pwd`)
 .DEFAULT_GOAL := image
 
 deps:
-	GO111MODULE=on go get -v ./...
+	TMPDIR=/var/tmp GO111MODULE=on go get -v ./...
 
 envars-webhook: $(shell find . -name '*.go')
 	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
