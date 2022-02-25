@@ -16,6 +16,8 @@ package main
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	admission "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,9 +25,7 @@ import (
 	"k8s.io/client-go/rest"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -36,14 +36,21 @@ const (
 
 var (
 	podResource = metav1.GroupVersionResource{Version: "v1", Resource: "pods"}
-	VerboseLogs bool
+	config      Config
 )
+
+type Config struct {
+	VerboseLogs       bool            `yaml:"verboseLogs"`
+	ContainersAllowed map[string]bool `yaml:"containersAllowed"`
+}
 
 // Enable debug logging
 func init() {
-	val := os.Getenv("GODEBUG")
-	if strings.Contains(val, "webhook2debug=1") {
-		VerboseLogs = true
+	filename, err := filepath.Abs("/run/config/config.yml")
+	yamlFile, err := ioutil.ReadFile(filename)
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		panic(err)
 	}
 }
 

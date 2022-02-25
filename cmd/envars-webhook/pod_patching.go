@@ -21,12 +21,6 @@ import (
 	"log"
 )
 
-// Inject env vars from node labels only for selected containers
-var allowedContainerNames = map[string]bool{
-	"ingester":      true,
-	"store-gateway": true,
-}
-
 // Add secret reference next to existing sources. The idea here is to preserve configuration coming from an upstream
 // manifest (i.e. Helm chart) and append our secret reference to sources that already exist (if any).
 // The secret name is created dynamically and stored in pod metadata for further use (i.e. create and delete).
@@ -66,7 +60,7 @@ func patchPod(pod corev1.Pod) []patchOperation {
 	// Loop through the list of containers and create a list of envFromSource patches
 	for i := range pod.Spec.Containers {
 		container := pod.Spec.Containers[i]
-		if !allowedContainerNames[container.Name] {
+		if !config.ContainersAllowed[container.Name] {
 			log.Printf("%s container patching not allowed", container.Name)
 		} else {
 			addSecretLabel = true

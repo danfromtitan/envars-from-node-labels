@@ -42,8 +42,7 @@ deploy: undeploy
 undeploy:
 	deploy/deploy.sh delete
 
-sample: unsample
-	sleep 30
+sample:
 	kubectl apply -f samples/namespace.yaml
 	kubectl apply -f samples/env-configmap.yaml
 	kubectl apply -f samples/env-secrets.yaml

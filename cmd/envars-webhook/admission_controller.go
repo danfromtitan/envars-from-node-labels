@@ -81,7 +81,7 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 	}
 
 	// log request
-	if VerboseLogs {
+	if config.VerboseLogs {
 		out, err := prettyJSON(body)
 		if err != nil {
 			log.Fatal(err)
@@ -153,7 +153,7 @@ func doServeAdmitFunc(w http.ResponseWriter, r *http.Request, admit admitFunc) (
 	}
 
 	// log response
-	if VerboseLogs {
+	if config.VerboseLogs {
 		out, err := json.MarshalIndent(&admissionReviewResponse, "", "  ")
 		if err != nil {
 			log.Fatal(err)

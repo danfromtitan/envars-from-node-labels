@@ -66,6 +66,7 @@ make
 make push
 ```
 
+
 ## Deployment
 
 - Verify you have `admissionregistration.k8s.io/v1beta1` installed in your cluster
@@ -80,19 +81,30 @@ kubectl api-versions | grep admissionregistration.k8s.io/v1beta1
 make tls
 ```
 
-
-- Enable debug logging in the deployment manifest to see the JSON request and response in server logs.
+- If you deploy pods from a namespace different from `samples`, update `MutatingWebhookConfiguration` to accept requests 
+  from that namespace instead.
 
 ```yaml
-      containers:
-        - name: server
-          image: ${IMAGE_NAME}
-          imagePullPolicy: Always
-          env:
-            - name: GODEBUG
-              value: webhook2debug=1
+webhooks:
+  - name: envars-webhook.webhook.svc
+    [...]
+    namespaceSelector:
+      matchLabels:
+        name: samples
 ```
 
+- In deployment configmap, enable verbose logs to see the JSON body for request and response in server logs. 
+  If you deploy pods with different names than the `samples` provided, update container names that are allowed to 
+  receive env vars from node labels.
+
+```yaml
+data:
+  config.yml: |
+    verboseLogs: false
+    containersAllowed:
+      ingester: true
+      store-gateway: true
+```
 
 - Deploy the webhook. Note that deploy target will also try to do a cleanup.
 
@@ -109,20 +121,18 @@ make undeploy
 
 ## Verification
 
-- The `envars-webhook` pod in the `webhook` namespace should be running, logs show admission controller activity
+- The `envars-webhook` pod in the `webhook` namespace should be running, logs show admission controller activity.
 
 ```bash
 kubectl get pods -n webhook
 k logs -f -n webhook envars-webhook-12345678-abcde
 ```
 
-
 - Mutating webhook `envars-webhook` should exist
 
 ```bash
 kubectl get mutatingwebhookconfigurations
 ```
-
 
 - Create a test namespace with a pre-existing configmap and secret. Note the unsample target will clean up all resources 
   under the sample directory. 
@@ -131,7 +141,6 @@ kubectl get mutatingwebhookconfigurations
 make sample
 ```
 
-
 - Create a pod with a single container that has a pre-existing configmap. The container's env should return the key-value 
   pairs from pre-existing configmap along with the env vars created from node labels.
 
@@ -139,7 +148,6 @@ make sample
 kubectl apply -f samples/pod-allowed.yaml
 kubectl logs -n samples pod-allowed
 ```
-
 
 - Create a pod with mixed containers, some allowed and some not allowed to take env vars from noe labels. The containers' 
   env should return the key-value pairs from pre-existing configmap and secret along with the env vars created from node 
@@ -152,7 +160,6 @@ kubectl logs -n samples pod-mixed store-gateway
 kubectl logs -n samples pod-mixed compactor
 ```
 
-
 - Create a pod with a container that is not allowed to receive env vars from node labels. The container's env should only 
   return the key-value pairs from pre-existing configmap and secret.
 
@@ -160,7 +167,6 @@ kubectl logs -n samples pod-mixed compactor
 kubectl apply -f samples/pod-excluded.yaml
 kubectl logs -n samples pod-excluded
 ```
-
 
 - Create a deployment with a container that has a pre-existing configmap and secret and is allowed to receive env vars 
   from node labels. The containers' env should return the key-value pairs from pre-existing configmap and secret, along 
@@ -171,7 +177,6 @@ kubectl apply -f samples/deployment.yaml
 kubectl exec -it -n samples deployment-12345abcde-abcde -- env
 ```
 
-
 - Create a statefulset with a container that has a pre-existing configmap and secret and is allowed to receive env vars
   from node labels. The containers' env should return the key-value pairs from pre-existing configmap and secret, along
   with the env vars created from node labels.
@@ -180,7 +185,6 @@ kubectl exec -it -n samples deployment-12345abcde-abcde -- env
 kubectl apply -f samples/statefulset.yaml
 kubectl exec -it -n samples statefulset-0 -- env
 ```
-
 
 - Cleanup verification resources
 
