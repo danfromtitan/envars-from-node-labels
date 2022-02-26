@@ -30,9 +30,6 @@ spec:
       labels:
         app: nginx
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
       containers:
         - name: store-gateway
           image: k8s.gcr.io/nginx-slim:0.8
