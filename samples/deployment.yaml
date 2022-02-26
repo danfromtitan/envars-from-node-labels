@@ -16,9 +16,12 @@ spec:
       labels:
         app: sample
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
       containers:
         - name: ingester
-          image: ubuntu
+          image: alpine
           command: ["/bin/sh"]
           args: ["-c", "sleep infinity"]
           envFrom:

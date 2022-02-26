@@ -10,7 +10,7 @@ spec:
   restartPolicy: OnFailure
   securityContext:
     runAsNonRoot: true
-    runAsUser: 99
+    runAsUser: 65534
   containers:
     - name: ingester
       image: alpine

@@ -10,7 +10,7 @@ spec:
   restartPolicy: OnFailure
   securityContext:
     runAsNonRoot: true
-    runAsUser: 99
+    runAsUser: 65534
   containers:
     - name: ingester
       image: busybox
@@ -23,14 +23,12 @@ spec:
       args: ["-c", "env"]
     - name: store-gateway
       image: busybox
+      envFrom:
+        - configMapRef:
+            name: env-configmap
       command: ["/bin/sh"]
       args: ["-c", "env"]
     - name: compactor
       image: busybox
       command: ["/bin/sh"]
       args: ["-c", "env"]
-      envFrom:
-        - configMapRef:
-            name: env-configmap
-        - secretRef:
-            name: env-secrets
