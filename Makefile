@@ -12,9 +12,8 @@
 
 # Makefile for building the Admission Controller webhook demo server and docker image.
 
-AWS_ACCOUNT_ID = $$(aws sts get-caller-identity --query Account --output text)
-AWS_REGION = $$(aws configure get region)
-IMAGE_NAME = $$(basename `pwd`)
+IMAGE_NAME="envars-webhook"
+NAMESPACE = "envars-webhook"
 
 .DEFAULT_GOAL := image
 
@@ -24,23 +23,21 @@ deps:
 envars-webhook: $(shell find . -name '*.go')
 	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
 
-image: envars-webhook deps
-	docker rmi $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest || true
-	docker build --no-cache -t $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest .
+image: envars-webhook
+	docker rmi ${IMAGE_NAME} || true
+	docker build --no-cache -t ${IMAGE_NAME} .
 
 push:
-	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com --password-stdin
-	aws ecr batch-delete-image --repository-name $(IMAGE_NAME) --image-ids imageDigest=$$(aws ecr list-images --repository-name $(IMAGE_NAME) | jq -r ' .imageIds[] | [ .imageDigest ] | @tsv ')
-	docker push $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest
+	docker push ${IMAGE_NAME}
 
 tls:
-	deploy/tls.sh
+	NAMESPACE=${NAMESPACE} deploy/tls.sh 
 
-deploy: undeploy
-	deploy/deploy.sh create
+deploy: 
+	NAMESPACE=${NAMESPACE} IMAGE_NAME=${IMAGE_NAME} deploy/deploy.sh apply
 
 undeploy:
-	deploy/deploy.sh delete
+	NAMESPACE=${NAMESPACE} IMAGE_NAME=${IMAGE_NAME} deploy/deploy.sh delete
 
 sample:
 	kubectl apply -f samples/namespace.yaml

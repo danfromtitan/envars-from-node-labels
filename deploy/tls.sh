@@ -32,7 +32,7 @@ req_extensions = v3_req
 distinguished_name = req_distinguished_name
 prompt = no
 [req_distinguished_name]
-CN = envars-webhook.webhook.svc
+CN = envars-webhook.${NAMESPACE}.svc
 [ v3_req ]
 basicConstraints = CA:FALSE
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
@@ -40,9 +40,9 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = envars-webhook
-DNS.2 = envars-webhook.webhook
-DNS.3 = envars-webhook.webhook.svc
-DNS.4 = envars-webhook.webhook.svc.cluster.local
+DNS.2 = envars-webhook.${NAMESPACE}
+DNS.3 = envars-webhook.${NAMESPACE}.svc
+DNS.4 = envars-webhook.${NAMESPACE}.svc.cluster.local
 EOF
 
 # Generate the CA cert and private key
@@ -60,15 +60,15 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: webhook
+  name: ${NAMESPACE}
   labels:
-    name: webhook
+    name: ${NAMESPACE}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: envars-webhook-tls
-  namespace: webhook
+  namespace: ${NAMESPACE}
 type: kubernetes.io/tls
 data:
   tls.key: $(cat ${key_dir}/envars-webhook-tls.key | base64 -w 0)
