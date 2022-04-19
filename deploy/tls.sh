@@ -13,7 +13,7 @@
 
 # tls.sh
 #
-# Generate a (self-signed) CA certificate and a certificate and private key to be used by the webhook demo server.
+# Generate a (self-signed) CA certificate and a certificate and private key to be used by the webhook server.
 # The certificate will be issued for the Common Name (CN) of `envars-webhook.webhook.svc`, which is the
 # cluster-internal DNS name for the service.
 
@@ -46,14 +46,14 @@ DNS.4 = envars-webhook.webhook.svc.cluster.local
 EOF
 
 # Generate the CA cert and private key
-openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook Demo CA"
+openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA"
 
 # Generate the private key for the webhook server
 openssl genrsa -out envars-webhook-tls.key 2048
 
 # Generate a Certificate Signing Request (CSR) for the private key, and sign it with the private key of the CA.
 openssl req -new -key envars-webhook-tls.key -subj "/CN=envars-webhook.webhook.svc" -config csr.conf \
-    | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -out envars-webhook-tls.crt -extensions v3_req -extfile csr.conf
+    | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -out envars-webhook-tls.crt -extensions v3_req -extfile csr.conf -days 7300
 
 # Create the TLS secret for the keys that were generated
 cat <<EOF | kubectl apply -f -
