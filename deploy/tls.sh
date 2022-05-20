@@ -46,7 +46,7 @@ DNS.4 = envars-webhook.webhook.svc.cluster.local
 EOF
 
 # Generate the CA cert and private key
-openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA"
+openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA" -days 7300
 
 # Generate the private key for the webhook server
 openssl genrsa -out envars-webhook-tls.key 2048
