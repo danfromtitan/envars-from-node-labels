@@ -8,12 +8,11 @@ on:
 jobs:
   build-and-push-image:
     name: Build Docker image and push to repositories
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         id: buildx
@@ -35,7 +34,7 @@ jobs:
       - name: Build image and push to Docker Hub and GitHub Container Registry
         uses: docker/build-push-action@v3
         with:
-          context: ./
+          context: .
           tags: |
             danfromtitan/envars-from-node-labels:latest 
             ghcr.io/danfromtitan/envars-from-node-labels:latest
