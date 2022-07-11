@@ -1,12 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NAMESPACE}
+  labels:
+    name: ${NAMESPACE}
+---
 apiVersion: v1 
 kind: ConfigMap 
 metadata:
   name: webhook-config
-  namespace: webhook
+  namespace: ${NAMESPACE}
 data:
   config.yml: |
-    verboseLogs: false
+    verboseLogs: true
     containersAllowed:
+      room-assistant: true
       ingester: true
       store-gateway: true
 ---
@@ -14,7 +22,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: envars-webhook
-  namespace: webhook
+  namespace: ${NAMESPACE}
   labels:
     app: envars-webhook
 spec:
@@ -30,6 +38,8 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
+      imagePullSecrets:
+        - name: acr-extreme
       containers:
       - name: server
         image: ${IMAGE_NAME}
@@ -55,7 +65,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: envars-webhook
-  namespace: webhook
+  namespace: ${NAMESPACE}
 spec:
   selector:
     app: envars-webhook
@@ -68,7 +78,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: envars-webhook
 webhooks:
-  - name: envars-webhook.webhook.svc
+  - name: envars-webhook.${NAMESPACE}.svc
     admissionReviewVersions: ["v1"]
     failurePolicy: Fail
     sideEffects: None
@@ -76,12 +86,12 @@ webhooks:
     clientConfig:
       service:
         name: envars-webhook
-        namespace: webhook
+        namespace: ${NAMESPACE}
         path: "/mutate"
       caBundle: ${CA_PEM_B64}
     namespaceSelector:
       matchLabels:
-        name: samples
+        envars-webhook: permit
     rules:
       - operations: [ "CREATE", "UPDATE", "DELETE" ]
         apiGroups: [""]
@@ -112,4 +122,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: webhook
+    namespace: ${NAMESPACE}
