@@ -19,8 +19,8 @@ jobs:
           go-version: 1.17
 
       - name: Build
-        run: CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
-        
+        run: CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o envars-webhook ./cmd/envars-webhook  
+  
   image:
     name: Build Docker image and push to repositories
     runs-on: ubuntu-latest
