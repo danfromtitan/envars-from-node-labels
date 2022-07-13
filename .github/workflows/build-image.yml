@@ -1,0 +1,77 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ "**" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-and-push-image:
+    name: Build Docker image and push to repositories
+    strategy:
+      matrix:
+        go-version: ["1.17"]
+        os: ["ubuntu-latest"]
+        platform: ["linux/amd64"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Cache between builds
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+      - name: Build
+        run: make envars-webhook
+        
+      - name: Docker tags
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/danfromtitan/envars-from-node-labels
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=${{ github.ref_name }}-
+
+      - name: Set up Docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image and push to GitHub Container Registry
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          context: ./
+          platforms: ${{ matrix.platform }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          
+      - name: Image name and digest
+        run: |
+          echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name"'
+          echo ${{ steps.docker_build.outputs.digest }}
