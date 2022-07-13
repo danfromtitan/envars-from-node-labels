@@ -73,6 +73,5 @@ jobs:
           
       - name: Image name and digest
         run: |
-          sudo apt-get -y install jq
-          echo ${{ steps.docker_build.outputs.metadata }} | | | jq '."image.name"'
+          echo "${{ steps.docker_build.outputs.metadata }}" | | | jq '."image.name"'
           echo ${{ steps.docker_build.outputs.digest }}
