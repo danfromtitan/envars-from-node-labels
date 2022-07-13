@@ -48,7 +48,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha,prefix=${{ github.event.base_ref }}-
+            type=sha,prefix=${{ branch || base_ref }}-
 
       - name: Set up Docker buildx
         id: buildx
@@ -74,4 +74,5 @@ jobs:
       - name: Image name and digest
         run: |
           echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name"'
+          echo ${{ fromJSON(steps.docker_build.outputs.metadata).labels['image.name'] }}
           echo ${{ steps.docker_build.outputs.digest }}
