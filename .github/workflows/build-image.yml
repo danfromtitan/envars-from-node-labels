@@ -45,7 +45,7 @@ jobs:
         with:
           context: ./
           load: true
-          push: ${{ github.ref == 'refs/heads/master' }}
+          push: ${{ github.ref == 'refs/heads/build' }}
           tags: |
             danfromtitan/envars-from-node-labels:latest 
             ghcr.io/danfromtitan/envars-from-node-labels:latest
