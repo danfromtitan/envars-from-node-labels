@@ -35,6 +35,21 @@ jobs:
 
       - name: Build
         run: make envars-webhook
+        
+      - name: Docker tags
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/username/envars-from-node-labels
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
 
       - name: Set up Docker Buildx
         id: buildx
@@ -54,8 +69,8 @@ jobs:
           context: ./
           platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ghcr.io/danfromtitan/envars-from-node-labels:latest
-
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
