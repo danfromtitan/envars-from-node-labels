@@ -41,7 +41,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/username/envars-from-node-labels
+            ghcr.io/danfromtitan/envars-from-node-labels
           tags: |
             type=schedule
             type=ref,event=branch
