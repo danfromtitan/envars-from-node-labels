@@ -40,11 +40,10 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Build image and push to Docker Hub and GitHub Container Registry
+        id: docker_build
         uses: docker/build-push-action@v3
         with:
-          cache-from: type=gha
-          cache-to: type=gha
-          context: .
+          context: ./
           load: true
           push: ${{ github.ref == 'refs/heads/master' }}
           tags: |
