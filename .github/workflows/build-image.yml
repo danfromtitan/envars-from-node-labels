@@ -26,12 +26,6 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Login to Github Packages
         uses: docker/login-action@v2
         with:
@@ -47,7 +41,6 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/build' }}
           tags: |
-            danfromtitan/envars-from-node-labels:latest 
             ghcr.io/danfromtitan/envars-from-node-labels:latest
 
       - name: Image digest
