@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  build-and-push-image:
     name: Build Docker image and push to repositories
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +46,7 @@ jobs:
           tags: |
             danfromtitan/envars-from-node-labels:latest 
             ghcr.io/danfromtitan/envars-from-node-labels:latest
-          push: ${{ github.ref == 'refs/heads/master' }}
+          push: ${{ github.ref == 'refs/heads/build' }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
