@@ -74,5 +74,4 @@ jobs:
       - name: Image name and digest
         run: |
           echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name"'
-          echo ${{ fromJSON(steps.docker_build.outputs.metadata).labels['image.name'] }}
           echo ${{ steps.docker_build.outputs.digest }}
