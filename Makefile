@@ -20,11 +20,12 @@ IMAGE_NAME = $$(basename `pwd`)
 
 deps:
 	TMPDIR=/var/tmp GO111MODULE=on go get -v ./...
+	go mod tidy
 
-envars-webhook: $(shell find . -name '*.go')
+envars-webhook: deps
 	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
 
-image: envars-webhook deps
+image: envars-webhook
 	docker rmi $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest || true
 	docker build --no-cache -t $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest .
 
