@@ -44,6 +44,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: ./
+          platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/build' }}
           tags: |
             danfromtitan/envars-from-node-labels:latest 
