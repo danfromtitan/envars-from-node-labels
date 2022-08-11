@@ -23,10 +23,11 @@ basedir="$(dirname "$0")"
 
 # Read the PEM-encoded CA certificate from secret, base64 decode it and replace the `${CA_PEM_B64}` placeholder 
 # in the YAML template, then create the Kubernetes admission controller resources
-CA_PEM_B64="$(kubectl get secret -n webhook envars-webhook-tls -o 'go-template={{index .data "ca.crt"}}')"
-IMAGE_NAME="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.$(aws configure get region).amazonaws.com/$(basename `pwd`):latest"
+CA_PEM_B64="$(kubectl get secret -n ${NAMESPACE} envars-webhook-tls -o 'go-template={{index .data "ca.crt"}}')"
+
 sed -e 's@${CA_PEM_B64}@'"${CA_PEM_B64}"'@g' \
-  -e 's@${IMAGE_NAME}@'"${IMAGE_NAME}"'@g' < "${basedir}/deployment.yaml.template" \
+  -e 's@${IMAGE_URL}@'"${IMAGE_URL}"'@g' \
+  -e 's@${NAMESPACE}@'"${NAMESPACE}"'@g' < "${basedir}/deployment.yaml.template" \
   | kubectl $1 -f - || true
 
 echo "The webhook server has been $1d"

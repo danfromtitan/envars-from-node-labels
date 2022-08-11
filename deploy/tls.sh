@@ -32,7 +32,7 @@ req_extensions = v3_req
 distinguished_name = req_distinguished_name
 prompt = no
 [req_distinguished_name]
-CN = envars-webhook.webhook.svc
+CN = envars-webhook.${NAMESPACE}
 [ v3_req ]
 basicConstraints = CA:FALSE
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
@@ -40,35 +40,35 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 [alt_names]
 DNS.1 = envars-webhook
-DNS.2 = envars-webhook.webhook
-DNS.3 = envars-webhook.webhook.svc
-DNS.4 = envars-webhook.webhook.svc.cluster.local
+DNS.2 = envars-webhook.${NAMESPACE}
+DNS.3 = envars-webhook.${NAMESPACE}.svc
+DNS.4 = envars-webhook.${NAMESPACE}.svc.cluster.local
 EOF
 
 # Generate the CA cert and private key
-openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA" -days 7300
+openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Admission Controller Webhook CA" -days 3650
 
 # Generate the private key for the webhook server
 openssl genrsa -out envars-webhook-tls.key 2048
 
 # Generate a Certificate Signing Request (CSR) for the private key, and sign it with the private key of the CA.
 openssl req -new -key envars-webhook-tls.key -subj "/CN=envars-webhook.webhook.svc" -config csr.conf \
-    | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -out envars-webhook-tls.crt -extensions v3_req -extfile csr.conf -days 7300
+    | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -out envars-webhook-tls.crt -extensions v3_req -extfile csr.conf -days 3650
 
 # Create the TLS secret for the keys that were generated
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: webhook
+  name: ${NAMESPACE}
   labels:
-    name: webhook
+    name: ${NAMESPACE}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: envars-webhook-tls
-  namespace: webhook
+  namespace: ${NAMESPACE}
 type: kubernetes.io/tls
 data:
   tls.key: $(cat ${key_dir}/envars-webhook-tls.key | base64 -w 0)

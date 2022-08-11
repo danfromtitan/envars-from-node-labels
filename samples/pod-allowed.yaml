@@ -13,7 +13,7 @@ spec:
     runAsUser: 65534
   containers:
     - name: ingester
-      image: alpine
+      image: busybox
       command: ["/bin/sh"]
       args: ["-c", "env"]
       envFrom:

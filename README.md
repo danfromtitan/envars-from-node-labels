@@ -50,7 +50,7 @@ on selected cluster resources. These are configured as part of the webhook deplo
 - Kubernetes cluster ver 1.9.0 or above
 - ideally, for scripts to work out of the box, you'd want to use an EKS cluster. In lack of that you'd need to modify 
   deployment script and provide equivalent outcomes for the aws CLI commands.
-- `admissionregistration.k8s.io/v1beta1` API enabled. In addition, the `MutatingAdmissionWebhook` admission controller 
+- `admissionregistration.k8s.io/v1beta1` API enabled. In addition to that, the `MutatingAdmissionWebhook` admission controller 
   should be added and [listed in the admission-control](https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html) 
   flag of `kube-apiserver`.
 - [GNU make](https://www.gnu.org/software/make/), [Go](https://golang.org) and [Docker engine](https://docs.docker.com/engine/install/) 
@@ -59,7 +59,8 @@ on selected cluster resources. These are configured as part of the webhook deplo
 
 ## Build
 
-- Create and push the image
+You can always use the image from the [build pipeline](https://github.com/danfromtitan/envars-from-node-labels/pkgs/container/envars-from-node-labels). 
+Should you need to build your own, follow the steps below to create and push the image to a private repository.
 
 ```bash
 make
@@ -68,6 +69,11 @@ make push
 
 
 ## Deployment
+
+For deployment, you can use either the Makefile scripted approach or the Helm chart included with the project. 
+Both methods achieve the same outcome, including to create a TLS self-signed certificate that will be used by the webhook.
+
+### Makefile scripts
 
 - Verify you have `admissionregistration.k8s.io/v1beta1` installed in your cluster
 
@@ -78,23 +84,25 @@ kubectl api-versions | grep admissionregistration.k8s.io/v1beta1
 - Create TLS self-signed certificate for the webhook, package cert, key and CAcert in a secret
 
 ```bash
+export NAMESPACE=webtest  # optional step - if not specified, it defaults to 'envhook'
 make tls
 ```
 
-- If you deploy pods from a namespace different from `samples`, update `MutatingWebhookConfiguration` to accept requests 
-  from that namespace instead.
+- If you deploy pods from a namespace different from `samples`, update `MutatingWebhookConfiguration` in 
+_deploy/deployment.yaml.template_ to accept requests from that namespace instead.
+- NB: Below ${NAMESPACE} is for where the webhook itself gets deployed.
 
 ```yaml
 webhooks:
-  - name: envars-webhook.webhook.svc
-    [...]
+  - name: envars-webhook.${NAMESPACE}.svc
+    # [...]
     namespaceSelector:
       matchLabels:
         name: samples
 ```
 
 - In deployment configmap, enable verbose logs to see the JSON body for request and response in server logs. 
-  If you deploy pods with different names than the `samples` provided, update container names that are allowed to 
+- In case you deploy pods with different names than the `samples` provided, update container names that are allowed to 
   receive env vars from node labels.
 
 ```yaml
@@ -102,30 +110,37 @@ data:
   config.yml: |
     verboseLogs: false
     containersAllowed:
+      compactor: false
       ingester: true
+      prober: true
       store-gateway: true
 ```
 
 - Deploy the webhook. Note that deploy target will also try to do a cleanup.
-
-```bash
-make deploy
-```
-
 - Run the undeploy target if you want to do a permanent cleanup.
 
 ```bash
+# namespace is optional - if not specified, it defaults to 'envhook'
+export NAMESPACE=webtest
+# defaults to GHRC image - if not specified, it uses the image you have build and published to your private AWS repository
+export IMAGE_URL="ghcr.io/danfromtitan/envars-from-node-labels:latest"
+make deploy
 make undeploy
 ```
 
 
+### Helm chart
+
+TODO - add details for helm install
+
+
 ## Verification
 
-- The `envars-webhook` pod in the `webhook` namespace should be running, logs show admission controller activity.
+- The `envars-webhook` pod should be running, logs show admission controller activity.
 
 ```bash
-kubectl get pods -n webhook
-k logs -f -n webhook envars-webhook-12345678-abcde
+kubectl get pods -n envhook
+kubectl logs -f -n envhook envars-webhook-12345678-abcde
 ```
 
 - Mutating webhook `envars-webhook` should exist

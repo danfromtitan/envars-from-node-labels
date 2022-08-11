@@ -10,11 +10,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Makefile for building the Admission Controller webhook demo server and docker image.
-
 AWS_ACCOUNT_ID = $$(aws sts get-caller-identity --query Account --output text)
 AWS_REGION = $$(aws configure get region)
 IMAGE_NAME = $$(basename `pwd`)
+
+IMAGE_URL ?= "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest"
+NAMESPACE ?= "envhook"
 
 .DEFAULT_GOAL := image
 
@@ -35,13 +36,13 @@ push:
 	docker push $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest
 
 tls:
-	deploy/tls.sh
+	NAMESPACE=${NAMESPACE} deploy/tls.sh
 
 deploy: undeploy
-	deploy/deploy.sh create
+	NAMESPACE=${NAMESPACE} IMAGE_URL=${IMAGE_URL} deploy/deploy.sh create
 
 undeploy:
-	deploy/deploy.sh delete
+	NAMESPACE=${NAMESPACE} IMAGE_URL=${IMAGE_URL} deploy/deploy.sh delete
 
 sample:
 	kubectl apply -f samples/namespace.yaml

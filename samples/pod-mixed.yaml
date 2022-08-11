@@ -14,20 +14,20 @@ spec:
   containers:
     - name: ingester
       image: busybox
+      command: ["/bin/sh"]
+      args: ["-c", "env"]
       envFrom:
         - configMapRef:
             name: env-configmap
         - secretRef:
             name: env-secrets
-      command: ["/bin/sh"]
-      args: ["-c", "env"]
     - name: store-gateway
       image: busybox
+      command: ["/bin/sh"]
+      args: ["-c", "env"]
       envFrom:
         - configMapRef:
             name: env-configmap
-      command: ["/bin/sh"]
-      args: ["-c", "env"]
     - name: compactor
       image: busybox
       command: ["/bin/sh"]

@@ -2,19 +2,21 @@ apiVersion: v1
 kind: ConfigMap 
 metadata:
   name: webhook-config
-  namespace: webhook
+  namespace: ${NAMESPACE}
 data:
   config.yml: |
     verboseLogs: false
     containersAllowed:
+      compactor: false
       ingester: true
+      prober: false
       store-gateway: true
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: envars-webhook
-  namespace: webhook
+  namespace: ${NAMESPACE}
   labels:
     app: envars-webhook
 spec:
@@ -32,7 +34,7 @@ spec:
         runAsUser: 65534
       containers:
       - name: server
-        image: ${IMAGE_NAME}
+        image: ${IMAGE_URL}
         imagePullPolicy: Always
         ports:
         - containerPort: 8443
@@ -55,7 +57,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: envars-webhook
-  namespace: webhook
+  namespace: ${NAMESPACE}
 spec:
   selector:
     app: envars-webhook
@@ -68,7 +70,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: envars-webhook
 webhooks:
-  - name: envars-webhook.webhook.svc
+  - name: envars-webhook.${NAMESPACE}.svc
     admissionReviewVersions: ["v1"]
     failurePolicy: Fail
     sideEffects: None
@@ -76,7 +78,7 @@ webhooks:
     clientConfig:
       service:
         name: envars-webhook
-        namespace: webhook
+        namespace: ${NAMESPACE}
         path: "/mutate"
       caBundle: ${CA_PEM_B64}
     namespaceSelector:
@@ -112,4 +114,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: webhook
+    namespace: ${NAMESPACE}
