@@ -75,7 +75,7 @@ func patchPod(pod corev1.Pod) []patchOperation {
 	// Loop through the list of (init)containers and create a list of envFromSource patches
 	for i, container := range pod.Spec.InitContainers {
 		log.Printf(">>> looking at INIT container %s in pod %s", container.Name, pod.Name)
-		addSecretLabel, patches = patchContainer(container, pod.Name, i, addSecretLabel, secretName, patches, "initcontainers")
+		addSecretLabel, patches = patchContainer(container, pod.Name, i, addSecretLabel, secretName, patches, "initContainers")
 	}
 	for i, container := range pod.Spec.Containers {
 		log.Printf(">>> looking at container %s in pod %s", container.Name, pod.Name)
