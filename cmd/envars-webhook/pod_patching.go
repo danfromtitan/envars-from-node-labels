@@ -63,7 +63,7 @@ func podName(pod corev1.Pod) string {
 	if len(pod.Name) > 0 {
 		return pod.Name
 	}
-	return pod.GetGenerateName()
+	return pod.GetGenerateName() + "xxx"
 }
 
 // Create event: secret reference is added next to existing sources and secret name is stored in pod label

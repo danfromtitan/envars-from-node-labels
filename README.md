@@ -198,6 +198,7 @@ kubectl exec -it -n samples deployment-123 -- env
 
 ```bash
 kubectl apply -f samples/statefulset.yaml
+kubectl logs -n samples statefulset-0 prober
 kubectl exec -it -n samples statefulset-0 -- env
 ```
 
