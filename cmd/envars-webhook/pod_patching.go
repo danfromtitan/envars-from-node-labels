@@ -58,6 +58,14 @@ func createSecretNameIfEmpty(secretName string) string {
 	return secretName
 }
 
+// Retrieve the pod name or the generated prefix (i.e. deployments, statefulsets)
+func podName(pod corev1.Pod) string {
+	if len(pod.Name) > 0 {
+		return pod.Name
+	}
+	return pod.GetGenerateName()
+}
+
 // Create event: secret reference is added next to existing sources and secret name is stored in pod label
 // Update event: in case of pod update, kubectl apply will stumble upon the secret reference source we've inserted
 // because that doesn't exist with the outside manifest. At the same time pod is not recreated, only the container gets
@@ -75,11 +83,11 @@ func patchPod(pod corev1.Pod) []patchOperation {
 	// Loop through the list of (init)containers and create a list of envFromSource patches
 	for i, container := range pod.Spec.InitContainers {
 		log.Printf(">>> looking at INIT container %s in pod %s", container.Name, pod.Name)
-		addSecretLabel, patches = patchContainer(container, pod.Name, i, addSecretLabel, secretName, patches, "initContainers")
+		addSecretLabel, patches = patchContainer(container, podName(pod), i, addSecretLabel, secretName, patches, "initContainers")
 	}
 	for i, container := range pod.Spec.Containers {
 		log.Printf(">>> looking at container %s in pod %s", container.Name, pod.Name)
-		addSecretLabel, patches = patchContainer(container, pod.Name, i, addSecretLabel, secretName, patches, "containers")
+		addSecretLabel, patches = patchContainer(container, podName(pod), i, addSecretLabel, secretName, patches, "containers")
 	}
 
 	// Store secret name in the pod's metadata label if at least one container is allowed to receive the env vars.
@@ -97,7 +105,7 @@ func patchPod(pod corev1.Pod) []patchOperation {
 }
 
 // Container patching helper
-func patchContainer(container corev1.Container, podName string, i int, addSecretLabel bool, secretName string, patches []patchOperation, containerType string) (bool, []patchOperation) {
+func patchContainer(container corev1.Container, podName string, index int, addSecretLabel bool, secretName string, patches []patchOperation, containerType string) (bool, []patchOperation) {
 	if !config.ContainersAllowed[container.Name] {
 		log.Printf("%s container patching not allowed", container.Name)
 	} else {
@@ -105,7 +113,7 @@ func patchContainer(container corev1.Container, podName string, i int, addSecret
 		containerEnvSource := containerEnvFromSource(container.EnvFrom, secretName)
 		patches = append(patches, patchOperation{
 			Op:    "replace",
-			Path:  fmt.Sprintf("/spec/%v/%d/envFrom", containerType, i),
+			Path:  fmt.Sprintf("/spec/%v/%d/envFrom", containerType, index),
 			Value: containerEnvSource,
 		})
 		log.Printf("patched envFrom source for container %s in pod %s", container.Name, podName)
