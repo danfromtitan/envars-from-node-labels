@@ -58,6 +58,14 @@ func createSecretNameIfEmpty(secretName string) string {
 	return secretName
 }
 
+// Retrieve the pod name or the generated prefix (i.e. deployments, statefulsets)
+func podName(pod corev1.Pod) string {
+	if len(pod.Name) > 0 {
+		return pod.Name
+	}
+	return pod.GetGenerateName() + "xxx"
+}
+
 // Create event: secret reference is added next to existing sources and secret name is stored in pod label
 // Update event: in case of pod update, kubectl apply will stumble upon the secret reference source we've inserted
 // because that doesn't exist with the outside manifest. At the same time pod is not recreated, only the container gets
@@ -72,21 +80,12 @@ func patchPod(pod corev1.Pod) []patchOperation {
 	// Update event: retrieve secret name from pod label
 	secretName := createSecretNameIfEmpty(pod.Labels["envars-secret-name"])
 
-	// Loop through the list of containers and create a list of envFromSource patches
-	for i := range pod.Spec.Containers {
-		container := pod.Spec.Containers[i]
-		if !config.ContainersAllowed[container.Name] {
-			log.Printf("%s container patching not allowed", container.Name)
-		} else {
-			addSecretLabel = true
-			containerEnvSource := containerEnvFromSource(container.EnvFrom, secretName)
-			patches = append(patches, patchOperation{
-				Op:    "replace",
-				Path:  fmt.Sprintf("/spec/containers/%d/envFrom", i),
-				Value: containerEnvSource,
-			})
-			log.Printf("patched envFrom source for container %s of pod %s", container.Name, pod.Name)
-		}
+	// Loop through the list of (init)containers and create a list of envFromSource patches
+	for i, container := range pod.Spec.InitContainers {
+		addSecretLabel, patches = patchContainer(container, podName(pod), i, addSecretLabel, secretName, patches, "initContainers")
+	}
+	for i, container := range pod.Spec.Containers {
+		addSecretLabel, patches = patchContainer(container, podName(pod), i, addSecretLabel, secretName, patches, "containers")
 	}
 
 	// Store secret name in the pod's metadata label if at least one container is allowed to receive the env vars.
@@ -101,4 +100,21 @@ func patchPod(pod corev1.Pod) []patchOperation {
 	}
 
 	return patches
+}
+
+// Container patching helper
+func patchContainer(container corev1.Container, podName string, index int, addSecretLabel bool, secretName string, patches []patchOperation, containerType string) (bool, []patchOperation) {
+	if !config.ContainersAllowed[container.Name] {
+		log.Printf("%s container patching not allowed", container.Name)
+	} else {
+		addSecretLabel = true
+		containerEnvSource := containerEnvFromSource(container.EnvFrom, secretName)
+		patches = append(patches, patchOperation{
+			Op:    "replace",
+			Path:  fmt.Sprintf("/spec/%v/%d/envFrom", containerType, index),
+			Value: containerEnvSource,
+		})
+		log.Printf("patched envFrom source for container %s in pod %s", container.Name, podName)
+	}
+	return addSecretLabel, patches
 }

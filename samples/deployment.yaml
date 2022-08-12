@@ -7,7 +7,7 @@ metadata:
   labels:
     app: sample
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: sample
@@ -19,9 +19,17 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
+      initContainers:
+        - name: prober
+          image: busybox
+          command: ["/bin/sh"]
+          args: ["-c", "env"]
+          envFrom:
+            - configMapRef:
+                name: env-configmap
       containers:
         - name: ingester
-          image: alpine
+          image: busybox
           command: ["/bin/sh"]
           args: ["-c", "sleep infinity"]
           envFrom:
