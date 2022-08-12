@@ -9,7 +9,7 @@ data:
     containersAllowed:
       compactor: false
       ingester: true
-      prober: false
+      prober: true
       store-gateway: true
 ---
 apiVersion: apps/v1

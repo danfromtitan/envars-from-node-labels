@@ -73,11 +73,13 @@ func patchPod(pod corev1.Pod) []patchOperation {
 	secretName := createSecretNameIfEmpty(pod.Labels["envars-secret-name"])
 
 	// Loop through the list of (init)containers and create a list of envFromSource patches
-	for i, container := range pod.Spec.Containers {
-		addSecretLabel, patches = patchContainer(container, pod, i, addSecretLabel, secretName, patches, "containers")
-	}
 	for i, container := range pod.Spec.InitContainers {
-		addSecretLabel, patches = patchContainer(container, pod, i, addSecretLabel, secretName, patches, "initcontainers")
+		log.Printf(">>> looking at INIT container %s in pod %s", container.Name, pod.Name)
+		addSecretLabel, patches = patchContainer(container, pod.Name, i, addSecretLabel, secretName, patches, "initcontainers")
+	}
+	for i, container := range pod.Spec.Containers {
+		log.Printf(">>> looking at container %s in pod %s", container.Name, pod.Name)
+		addSecretLabel, patches = patchContainer(container, pod.Name, i, addSecretLabel, secretName, patches, "containers")
 	}
 
 	// Store secret name in the pod's metadata label if at least one container is allowed to receive the env vars.
@@ -95,7 +97,7 @@ func patchPod(pod corev1.Pod) []patchOperation {
 }
 
 // Container patching helper
-func patchContainer(container corev1.Container, pod corev1.Pod, i int, addSecretLabel bool, secretName string, patches []patchOperation, containerType string) (bool, []patchOperation) {
+func patchContainer(container corev1.Container, podName string, i int, addSecretLabel bool, secretName string, patches []patchOperation, containerType string) (bool, []patchOperation) {
 	if !config.ContainersAllowed[container.Name] {
 		log.Printf("%s container patching not allowed", container.Name)
 	} else {
@@ -106,7 +108,7 @@ func patchContainer(container corev1.Container, pod corev1.Pod, i int, addSecret
 			Path:  fmt.Sprintf("/spec/%v/%d/envFrom", containerType, i),
 			Value: containerEnvSource,
 		})
-		log.Printf("patched envFrom source for container %s of pod %s", container.Name, pod.Name)
+		log.Printf("patched envFrom source for container %s in pod %s", container.Name, podName)
 	}
 	return addSecretLabel, patches
 }

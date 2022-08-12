@@ -131,26 +131,25 @@ make undeploy
 
 ### Helm chart
 
-TODO - add details for helm install
+Follow the [instructions in Helm chart](chart/envars-webhook/README.md) to use this method. 
 
 
 ## Verification
 
+- The `envars-webhook-tls` secret should exist, cert should have the content expected.
 - The `envars-webhook` pod should be running, logs show admission controller activity.
+- Mutating webhook `envars-webhook` should exist with configuration expected.
 
 ```bash
-kubectl get pods -n envhook
-kubectl logs -f -n envhook envars-webhook-12345678-abcde
-```
-
-- Mutating webhook `envars-webhook` should exist
-
-```bash
-kubectl get mutatingwebhookconfigurations
+export NAMESPACE=webtest
+kubectl get secret -n $NAMESPACE envars-webhook-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d | openssl x509 -text -noout
+kubectl get pods -n $NAMESPACE
+kubectl logs -f -n $NAMESPACE <<pod-name>>
+kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
 ```
 
 - Create a test namespace with a pre-existing configmap and secret. Note the unsample target will clean up all resources 
-  under the sample directory. 
+  under the samples directory. 
 
 ```bash
 make sample
@@ -164,9 +163,17 @@ kubectl apply -f samples/pod-allowed.yaml
 kubectl logs -n samples pod-allowed
 ```
 
+- Create a pod with a container that is not allowed to receive env vars from node labels. The container's env should only
+  return the key-value pairs from pre-existing configmap and secret.
+
+```bash
+kubectl apply -f samples/pod-excluded.yaml
+kubectl logs -n samples pod-excluded
+```
+
 - Create a pod with mixed containers, some allowed and some not allowed to take env vars from noe labels. The containers' 
   env should return the key-value pairs from pre-existing configmap and secret along with the env vars created from node 
-  labels where container was allowed.
+  labels when the container was allowed.
 
 ```bash
 kubectl apply -f samples/pod-mixed.yaml
@@ -175,21 +182,13 @@ kubectl logs -n samples pod-mixed store-gateway
 kubectl logs -n samples pod-mixed compactor
 ```
 
-- Create a pod with a container that is not allowed to receive env vars from node labels. The container's env should only 
-  return the key-value pairs from pre-existing configmap and secret.
-
-```bash
-kubectl apply -f samples/pod-excluded.yaml
-kubectl logs -n samples pod-excluded
-```
-
-- Create a deployment with a container that has a pre-existing configmap and secret and is allowed to receive env vars 
-  from node labels. The containers' env should return the key-value pairs from pre-existing configmap and secret, along 
-  with the env vars created from node labels.
+- Create a deployment with a(n init) container that has a pre-existing configmap and secret and is allowed to receive 
+  env vars from node labels. The containers' env should return the key-value pairs from pre-existing configmap and secret, 
+  along with the env vars created from node labels.
 
 ```bash
 kubectl apply -f samples/deployment.yaml
-kubectl exec -it -n samples deployment-12345abcde-abcde -- env
+kubectl exec -it -n samples <<pod-name>> -- env
 ```
 
 - Create a statefulset with a container that has a pre-existing configmap and secret and is allowed to receive env vars
