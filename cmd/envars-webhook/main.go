@@ -131,6 +131,9 @@ func main() {
 	log.Println("starting admission controller ...")
 	mux := http.NewServeMux()
 	mux.Handle("/mutate", admitFuncHandler(mutateDispatch))
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	})
 	server := &http.Server{
 		Addr:    ":8443",
 		Handler: mux,
