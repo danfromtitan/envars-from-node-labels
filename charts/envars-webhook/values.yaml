@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/danfromtitan/envars-from-node-labels
   pullPolicy: Always
-  tag: "develop-92a2224"
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
