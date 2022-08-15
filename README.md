@@ -131,7 +131,7 @@ make undeploy
 
 ### Helm chart
 
-Follow the [instructions in Helm chart](chart/envars-webhook/README.md) to use this method. 
+Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use this method. 
 
 
 ## Verification
@@ -144,7 +144,7 @@ Follow the [instructions in Helm chart](chart/envars-webhook/README.md) to use t
 export NAMESPACE=webtest
 kubectl get secret -n $NAMESPACE envars-webhook-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d | openssl x509 -text -noout
 kubectl get pods -n $NAMESPACE
-kubectl logs -f -n $NAMESPACE <<pod-name>>
+kubectl logs -f -n $NAMESPACE pod-name
 kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
 ```
 
