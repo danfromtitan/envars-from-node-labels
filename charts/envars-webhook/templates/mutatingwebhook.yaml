@@ -1,0 +1,49 @@
+{{- $altNames := list ( include "envars-webhook.name" . ) ( printf "%s.%s" (include "envars-webhook.name" .) .Release.Namespace ) ( printf "%s.%s.svc" (include "envars-webhook.name" .) .Release.Namespace ) ( printf "%s.%s.svc.cluster.local" (include "envars-webhook.name" .) .Release.Namespace ) -}}
+{{- $ca := genCA ( printf "%s-root-ca.%s" (include "envars-webhook.name" .) .Release.Namespace ) 3650 -}}
+{{- $cert := genSignedCert ( printf "%s.%s.svc" (include "envars-webhook.name" .) .Release.Namespace ) nil $altNames 3650 $ca -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "envars-webhook.fullname" . }}
+  labels:
+    {{- include "envars-webhook.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+webhooks:
+  - name: {{ include "envars-webhook.fullname" . }}.{{ .Release.Namespace }}.svc
+    admissionReviewVersions: ["v1"]
+    failurePolicy: Fail
+    sideEffects: None
+    timeoutSeconds: 30
+    clientConfig:
+      service:
+        name: {{ include "envars-webhook.fullname" . }}
+        namespace: {{ .Release.Namespace }}
+        path: "/mutate"
+      caBundle: {{ $ca.Cert | b64enc }}
+    namespaceSelector:
+      matchLabels:
+        name: {{ .Values.webhook.namespaceSelector }}
+    rules:
+      - operations: [ "CREATE", "UPDATE", "DELETE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods", "pods/binding"]
+        scope: '*'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "envars-webhook.name" . }}-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "envars-webhook.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
+  ca.crt: {{ $ca.Cert | b64enc }}

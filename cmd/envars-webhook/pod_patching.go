@@ -105,7 +105,7 @@ func patchPod(pod corev1.Pod) []patchOperation {
 // Container patching helper
 func patchContainer(container corev1.Container, podName string, index int, addSecretLabel bool, secretName string, patches []patchOperation, containerType string) (bool, []patchOperation) {
 	if !config.ContainersAllowed[container.Name] {
-		log.Printf("%s container patching not allowed", container.Name)
+		log.Printf("patching not allowed for container %s in pod %s", container.Name, podName)
 	} else {
 		addSecretLabel = true
 		containerEnvSource := containerEnvFromSource(container.EnvFrom, secretName)
