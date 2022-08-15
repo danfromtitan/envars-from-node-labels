@@ -2,7 +2,7 @@ name: Build and Publish
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ "develop" ]
     tags: [ "v*.*.*" ]
   pull_request:
     branches: [ "master" ]
