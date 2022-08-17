@@ -92,5 +92,7 @@ jobs:
         driver: docker
         container-runtime: ${{ matrix.container-runtime }}
         kubernetes-version: v1.22.10
-    - name: kubectl
-      run: kubectl get pods -A
+    - name: Setup helm
+      run: |
+        curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+        helm ls -A

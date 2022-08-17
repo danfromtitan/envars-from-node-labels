@@ -70,8 +70,15 @@ make push
 
 ## Deployment
 
-For deployment, you can use either the Makefile scripted approach or the Helm chart included with the project. 
-Both methods achieve the same outcome, including to create a TLS self-signed certificate that will be used by the webhook.
+For deployment, you can use either the [Helm chart included with the project](./charts/envars-webhook) or 
+the [Makefile](./Makefile) scripted approach. Both methods achieve the same outcome, including the creation ot the TLS 
+self-signed certificate that will be used by the webhook.
+
+
+### Helm chart
+
+Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use this method.
+
 
 ### Makefile scripts
 
@@ -127,11 +134,6 @@ export IMAGE_URL="ghcr.io/danfromtitan/envars-from-node-labels:latest"
 make deploy
 make undeploy
 ```
-
-
-### Helm chart
-
-Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use this method. 
 
 
 ## Verification
