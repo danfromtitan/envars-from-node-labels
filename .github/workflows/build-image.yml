@@ -84,7 +84,7 @@ jobs:
     needs:
       - build-and-push-image
     steps:
-    - name: Start minikube
+    - name: Setup minikube
       uses: medyagh/setup-minikube@master
       id: minikube
       with:
@@ -92,7 +92,11 @@ jobs:
         driver: docker
         container-runtime: ${{ matrix.container-runtime }}
         kubernetes-version: v1.22.10
-    - name: Setup helm
+    - name: Deploy webhook
       run: |
-        curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-        helm ls -A
+        curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+        cd charts/envars-webhook
+        NAMESPACE=webtest
+        IMAGE_TAG=$(echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1]')
+        helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
+        helm get values envars-webhook -n $NAMESPACE
