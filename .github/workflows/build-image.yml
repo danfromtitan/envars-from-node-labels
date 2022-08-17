@@ -54,7 +54,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build image and push to GitHub Container Registry
-        id: docker_build
+        id: docker-build
         uses: docker/build-push-action@v3
         with:
           context: ./
@@ -64,8 +64,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image name and digest
         run: |
-          echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name"'
-          echo ${{ steps.docker_build.outputs.digest }}
+          echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"'
+          echo ${{ steps.docker-build.outputs.digest }}
 
   test-webhook:
     name: Test webhook
@@ -92,6 +92,6 @@ jobs:
         curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
         cd charts/envars-webhook
         NAMESPACE=webtest
-        IMAGE_TAG=$(echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1]')
+        IMAGE_TAG=$(echo '${{ steps.build-and-push-image.docker-build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1]')
         helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
         helm get values envars-webhook -n $NAMESPACE
