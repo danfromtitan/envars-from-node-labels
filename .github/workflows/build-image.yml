@@ -79,23 +79,18 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        platform: ["linux/amd64"]
+        container-runtime: ["containerd"]
     runs-on: ${{ matrix.os }}
     needs:
       - build-and-push-image
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Test kubectl
-        uses: Eyevinn/action-eks-kubectl@master
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          REGION: ${{ secrets.AWS_REGION }}
-          CLUSTER: ${{ secrets.AWS_CLUSTER }}
-        with:
-          args: get pods
+    - name: Start minikube
+      uses: medyagh/setup-minikube@master
+      id: minikube
+      with:
+        minikube-version: 1.24.0
+        driver: docker
+        container-runtime: ${{ matrix.container-runtime }}
+        kubernetes-version: v1.22.10
+    - name: kubectl
+      run: kubectl get pods -A
