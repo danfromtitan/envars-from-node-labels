@@ -1,9 +1,12 @@
-name: Build and Publish
+name: Build, test and publish
 
 on:
   push:
     branches: [ "**" ]
     tags: [ "v*.*.*" ]
+
+env:
+  AWS_REGION: us-east-1
 
 jobs:
   build-and-push-image:
@@ -73,3 +76,20 @@ jobs:
         run: |
           echo '${{ steps.docker_build.outputs.metadata }}' | jq -r '."image.name"'
           echo ${{ steps.docker_build.outputs.digest }}
+
+  test-webhook:
+    name: Test webhook
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        platform: ["linux/amd64"]
+    runs-on: ${{ matrix.os }}
+    needs:
+      - build-and-push-image
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
