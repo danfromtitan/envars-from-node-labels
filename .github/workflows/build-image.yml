@@ -34,13 +34,13 @@ jobs:
       - name: Build
         run: make envars-webhook
       - name: Docker tags
-        id: meta
+        id: docker-tags
         uses: docker/metadata-action@v4
         with:
           images: |
             ghcr.io/danfromtitan/envars-from-node-labels
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'develop') }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -62,8 +62,8 @@ jobs:
           context: ./
           platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.docker-tags.outputs.tags }}
+          labels: ${{ steps.docker-tags.outputs.labels }}
       - name: Image name and digest
         run: |
           echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"'
@@ -96,4 +96,7 @@ jobs:
         NAMESPACE=webtest
         IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1]')
         helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
-        helm ls -n $NAMESPACE
+        kubectl get secret -n $NAMESPACE envars-webhook-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d | openssl x509 -text -noout
+        kubectl get pods -n $NAMESPACE
+        kubectl logs -f -n $NAMESPACE pod-name
+        kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
