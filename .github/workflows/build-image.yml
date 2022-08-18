@@ -96,7 +96,7 @@ jobs:
         NAMESPACE=webtest
         IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1]')
         helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
+        helm get values envars-webhook -n $NAMESPACE
         kubectl get secret -n $NAMESPACE envars-webhook-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d | openssl x509 -text -noout
         kubectl get pods -n $NAMESPACE
-        kubectl logs -f -n $NAMESPACE pod-name
         kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
