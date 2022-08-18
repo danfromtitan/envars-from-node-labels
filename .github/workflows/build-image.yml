@@ -40,7 +40,7 @@ jobs:
           images: |
             ghcr.io/danfromtitan/envars-from-node-labels
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'develop') }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -83,7 +83,7 @@ jobs:
       uses: medyagh/setup-minikube@master
       id: minikube
       with:
-        minikube-version: 1.23.0
+        minikube-version: 1.23.2
         driver: docker
         container-runtime: ${{ matrix.container-runtime }}
         kubernetes-version: v1.22.10
@@ -100,8 +100,13 @@ jobs:
           kubectl get pods -n $NAMESPACE | tail -n +2
           sleep 1
         done
-    - name: Verify webhook
+    - name: Verify pod-allowed
       run: |
+        NAMESPACE=samples
         make sample
         kubectl apply -f samples/pod-allowed.yaml
-        kubectl logs -n samples pod-allowed
+        until kubectl get pods -n $NAMESPACE | grep Completed > /dev/null; do
+          kubectl get pods -n $NAMESPACE | tail -n +2
+          sleep 1
+        done
+        kubectl logs -n $NAMESPACE pod-allowed
