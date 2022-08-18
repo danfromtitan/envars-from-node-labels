@@ -114,3 +114,12 @@ jobs:
         kubectl apply -f samples/pod-excluded.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-excluded" | grep Completed > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-excluded | grep -v NODE_MINIKUBE_K8S_IO_NAME > /dev/null
+    - name: Verify pod-mixed
+      run: |
+        NAMESPACE=samples
+        make sample
+        kubectl apply -f samples/pod-mixed.yaml
+        until kubectl get pods -n $NAMESPACE | grep "pod-mixed" | grep Completed > /dev/null; do sleep 1; done
+        kubectl logs -n $NAMESPACE pod-mixed ingester | grep NODE_MINIKUBE_K8S_IO_NAME > /dev/null
+        kubectl logs -n $NAMESPACE pod-mixed store-gateway | grep NODE_MINIKUBE_K8S_IO_NAME > /dev/null
+        kubectl logs -n $NAMESPACE pod-mixed compactor | grep -v NODE_MINIKUBE_K8S_IO_NAME > /dev/null
