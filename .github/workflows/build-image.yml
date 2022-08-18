@@ -109,4 +109,5 @@ jobs:
           kubectl get pods -n $NAMESPACE | tail -n +2
           sleep 1
         done
-        kubectl logs -n $NAMESPACE pod-allowed
+        kubectl get pods -n $NAMESPACE
+        kubectl logs -n $NAMESPACE pod-allowed | grep NODE_MINIKUBE_K8S_IO_NAME > /dev/null
