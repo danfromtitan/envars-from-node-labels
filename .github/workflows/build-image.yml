@@ -105,9 +105,5 @@ jobs:
         NAMESPACE=samples
         make sample
         kubectl apply -f samples/pod-allowed.yaml
-        until kubectl get pods -n $NAMESPACE | grep Completed > /dev/null; do
-          kubectl get pods -n $NAMESPACE | tail -n +2
-          sleep 1
-        done
-        kubectl get pods -n $NAMESPACE
-        kubectl logs -n $NAMESPACE pod-allowed | grep NODE_MINIKUBE_K8S_IO_NAME > /dev/null
+        until kubectl get pods -n $NAMESPACE | grep Completed > /dev/null; do sleep 1; done
+        kubectl logs -n $NAMESPACE pod-allowed | grep NODE_MINIKUBE_K8S_IO_NAMEX > /dev/null
