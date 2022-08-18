@@ -94,9 +94,16 @@ jobs:
         curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
         cd charts/envars-webhook
         NAMESPACE=webtest
-        IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1]')
+        IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
         helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
         helm get values envars-webhook -n $NAMESPACE
+    - name: Verify webhook
+      run: |
+        NAMESPACE=webtest
+        until kubectl get pods -n $NAMESPACE | grep Running > /dev/null; do
+          kubectl get pods -n $NAMESPACE | tail -n +2
+          sleep 1
+        done
         kubectl get secret -n $NAMESPACE envars-webhook-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d | openssl x509 -text -noout
         kubectl get pods -n $NAMESPACE
         kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
