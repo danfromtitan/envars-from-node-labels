@@ -23,6 +23,7 @@ jobs:
               - 'Dockerfile'
               - 'go.mod'
             test:
+              - '.github/**/*'
               - 'charts/envars-webhook/**/*'
               - 'charts/envars-webhook/Chart.yaml'
               - 'charts/envars-webhook/values.yaml'
