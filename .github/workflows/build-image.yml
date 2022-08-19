@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build: ${{ steps.filter.outputs.build }}
+      chart: ${{ steps.filter.outputs.chart }}
       test: ${{ steps.filter.outputs.test }}
     steps:
       - uses: actions/checkout@v3
@@ -121,11 +122,11 @@ jobs:
       
   
   test:
-    needs: [changes, build]
+    needs: [build, changes, chart]
     if: |
       always() &&
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
-      (needs.changes.outputs.build == 'true' || needs.changes.outputs.test == 'true')
+      (needs.changes.outputs.build == 'true' || needs.changes.outputs.chart == 'true' || needs.changes.outputs.test == 'true)
     runs-on: ubuntu-latest
 
     steps:
