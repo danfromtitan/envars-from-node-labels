@@ -7,7 +7,7 @@
 ***********************************************************************
 
 Verify the admission controller is working by running these commands:
-  kubectl get secret -n {{ .Release.Namespace }} {{ include "envars-webhook.name" . }}-tls -o 'go-template=\{\{index .data "tls.crt"\}\}' | base64 -d | openssl x509 -text -noout
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "envars-webhook.name" . }}-tls -o {{`'go-template={{index .data "tls.crt"}}'`}} | base64 -d | openssl x509 -text -noout
   kubectl get pods -n {{ .Release.Namespace }}
   kubectl logs -f -n {{ .Release.Namespace }} pod-name
   kubectl get mutatingwebhookconfigurations envars-webhook -o yaml

@@ -70,8 +70,15 @@ make push
 
 ## Deployment
 
-For deployment, you can use either the Makefile scripted approach or the Helm chart included with the project. 
-Both methods achieve the same outcome, including to create a TLS self-signed certificate that will be used by the webhook.
+For deployment, you can use either the [Helm chart included with the project](./charts/envars-webhook) or 
+the [Makefile](./Makefile) scripted approach. Both methods achieve the same outcome, including the creation ot the TLS 
+self-signed certificate that will be used by the webhook.
+
+
+### Helm chart
+
+Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use this method.
+
 
 ### Makefile scripts
 
@@ -129,11 +136,6 @@ make undeploy
 ```
 
 
-### Helm chart
-
-Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use this method. 
-
-
 ## Verification
 
 - The `envars-webhook-tls` secret should exist, cert should have the content expected.
@@ -189,7 +191,7 @@ kubectl logs -n samples pod-mixed compactor
 ```bash
 kubectl apply -f samples/deployment.yaml
 kubectl logs -n samples deployment-123 prober
-kubectl exec -it -n samples deployment-123 -- env
+kubectl exec -it -n samples deployment-123 -c ingester -- env
 ```
 
 - Create a statefulset with a container that has a pre-existing configmap and secret and is allowed to receive env vars
