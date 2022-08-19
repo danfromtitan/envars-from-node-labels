@@ -4,6 +4,12 @@ on:
   push:
     branches: [ "**" ]
     tags: [ "v*.*.*" ]
+  workflow_dispatch:
+    inputs:
+      go-version:
+        default: "1.17"
+        description: 'Go version'
+        required: true
 
 jobs:
   changes:
@@ -35,12 +41,7 @@ jobs:
     if: |
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.build == 'true')
-    strategy:
-      matrix:
-        go-version: ["1.17"]
-        os: ["ubuntu-latest"]
-        platform: ["linux/amd64"]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     outputs:
       build-metadata: ${{ steps.docker-build.outputs.metadata }}
 
@@ -50,15 +51,15 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: ${{ github.event.inputs.go-version }}
 
       - uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-${{ matrix.go-version }}-
+          key: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-
 
       - name: build binary
         run: make envars-webhook
@@ -89,7 +90,7 @@ jobs:
         id: docker-build
         with:
           context: ./
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
@@ -105,11 +106,7 @@ jobs:
       always() &&
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.build == 'true' || needs.changes.outputs.test == 'true')
-    strategy:
-      matrix:
-        os: ["ubuntu-latest"]
-        container-runtime: ["containerd"]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
 
@@ -118,7 +115,7 @@ jobs:
 #      with:
 #        minikube-version: 1.23.2
 #        driver: docker
-#        container-runtime: ${{ matrix.container-runtime }}
+#        container-runtime: containerd
 #        kubernetes-version: v1.22.10
 
 #    - uses: actions/checkout@v3
