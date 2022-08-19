@@ -29,13 +29,14 @@ jobs:
               - 'cmd/envars-webhook/*'
               - 'Dockerfile'
               - 'go.mod'
-            test:
-              - '.github/**/*'
+              - 'Makefile'
+            chart:
               - 'charts/envars-webhook/**/*'
               - 'charts/envars-webhook/Chart.yaml'
               - 'charts/envars-webhook/values.yaml'
+            test:
+              - '.github/**/*'
               - 'samples/*'
-              - 'Makefile'
 
   build:
     needs: changes
@@ -64,11 +65,9 @@ jobs:
           key: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-
 
-      - name: build binary
-        run: make envars-webhook
+      - run: make envars-webhook
 
-      - name: docker tags
-        id: docker-tags
+      - id: docker-tags
         uses: docker/metadata-action@v4
         with:
           images: |
@@ -98,13 +97,29 @@ jobs:
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
 
-      - name: set image output
-        id: image-output
+      - id: image-output
         run: |
           echo ::set-output name=image-tag::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
           echo ::set-output name=image-name::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"')
           echo ::set-output name=image-digest::${{ steps.docker-build.outputs.digest }}
 
+  chart:
+    needs: changes
+    if: |
+      (github.repository == 'danfromtitan/envars-from-node-labels') &&
+      (needs.changes.outputs.chart == 'true')
+    runs-on: ubuntu-latest
+    
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - run: |
+          git config --global user.name "$GITHUB_ACTOR"
+          git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
+    
+      
+  
   test:
     needs: [changes, build]
     if: |
