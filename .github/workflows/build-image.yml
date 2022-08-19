@@ -33,8 +33,6 @@ jobs:
               - 'Makefile'
             chart:
               - 'charts/envars-webhook/**/*'
-              - 'charts/envars-webhook/Chart.yaml'
-              - 'charts/envars-webhook/values.yaml'
             test:
               - '.github/**/*'
               - 'samples/*'

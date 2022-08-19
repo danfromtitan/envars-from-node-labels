@@ -27,5 +27,3 @@ kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
 NAMESPACE=webtest
 helm uninstall -n $NAMESPACE envars-webhook
 ```
-
-# change
