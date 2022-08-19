@@ -30,7 +30,9 @@ jobs:
   build-and-push-image:
     name: Build Docker image and push to repositories
     needs: changes
-    if: ${{ needs.changes.outputs.build == 'true' }}
+    if: |
+      (github.repository == 'danfromtitan/envars-from-node-labels') &&
+      (needs.changes.outputs.build == 'true')
     strategy:
       matrix:
         go-version: ["1.17"]
@@ -104,7 +106,9 @@ jobs:
   test-webhook:
     name: Test webhook
     needs: [build-and-push-image, changes]
-    if: ${{ needs.changes.outputs.test == 'true' }}
+    if: |
+      (github.repository == 'danfromtitan/envars-from-node-labels') &&
+      (needs.changes.outputs.build == 'true' || needs.changes.outputs.test == 'true')
     strategy:
       matrix:
         os: ["ubuntu-latest"]
