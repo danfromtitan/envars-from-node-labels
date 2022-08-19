@@ -191,7 +191,7 @@ kubectl logs -n samples pod-mixed compactor
 ```bash
 kubectl apply -f samples/deployment.yaml
 kubectl logs -n samples deployment-123 prober
-kubectl exec -it -n samples deployment-123 -- env
+kubectl exec -it -n samples deployment-123 -c ingester -- env
 ```
 
 - Create a statefulset with a container that has a pre-existing configmap and secret and is allowed to receive env vars
