@@ -13,6 +13,7 @@ on:
 
 jobs:
   changes:
+    if: ${{ github.repository == 'danfromtitan/envars-from-node-labels' }}
     runs-on: ubuntu-latest
     outputs:
       build: ${{ steps.filter.outputs.build }}
@@ -36,14 +37,16 @@ jobs:
               - 'samples/*'
               - 'Makefile'
 
-  build-and-push-image:
+  build:
     needs: changes
     if: |
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.build == 'true')
     runs-on: ubuntu-latest
     outputs:
-      build-metadata: ${{ steps.docker-build.outputs.metadata }}
+      image-tag: ${{ steps.image-output.outputs.image-tag }}
+      image-name: ${{ steps.image-output.outputs.image-name }}
+      image-digest: ${{ steps.image-output.outputs.image-digest }}
 
     steps:
 
@@ -95,13 +98,15 @@ jobs:
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
 
-      - name: image name and digest
+      - name: set image output
+        id: image-output
         run: |
-          echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"'
-          echo ${{ steps.docker-build.outputs.digest }}
+          echo ::set-output name=image-tag::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
+          echo ::set-output name=image-name::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"')
+          echo ::set-output name=image-digest::${{ steps.docker-build.outputs.digest }}
 
-  test-webhook:
-    needs: [changes, build-and-push-image]
+  test:
+    needs: [changes, build]
     if: |
       always() &&
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
@@ -126,8 +131,7 @@ jobs:
         NAMESPACE: webtest
       run: |
         IMAGE_TAG=latest
-        [[ "${{contains(needs.build-and-push-image.result, 'success') }}" == "true" ]] && \
-          IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
+        [[ "${{contains(needs.build.result, 'success') }}" == "true" ]] && IMAGE_TAG=${{ needs.build.outputs.image-tag }}
         echo $IMAGE_TAG
 #        curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
         
