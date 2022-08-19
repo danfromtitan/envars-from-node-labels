@@ -126,7 +126,7 @@ jobs:
     if: |
       always() &&
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
-      (needs.changes.outputs.build == 'true' || needs.changes.outputs.chart == 'true' || needs.changes.outputs.test == 'true)
+      (needs.changes.outputs.build == 'true' || needs.changes.outputs.chart == 'true' || needs.changes.outputs.test == 'true')
     runs-on: ubuntu-latest
 
     steps:
