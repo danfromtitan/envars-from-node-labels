@@ -102,6 +102,7 @@ jobs:
   test-webhook:
     needs: [changes, build-and-push-image]
     if: |
+      always() &&
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.build == 'true' || needs.changes.outputs.test == 'true')
     strategy:
