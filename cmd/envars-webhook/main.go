@@ -140,5 +140,3 @@ func main() {
 	}
 	log.Fatal(server.ListenAndServeTLS(certPath, keyPath))
 }
-
-// changed
