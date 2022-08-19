@@ -215,6 +215,3 @@ make unsample
 
 The admission controller implementation was inspired from the outstanding 
 [admission-controller-webhook-demo](https://github.com/stackrox/admission-controller-webhook-demo) project.
-
-
-## Changes
