@@ -12,7 +12,7 @@ jobs:
       backend: ${{ steps.filter.outputs.build }}
       frontend: ${{ steps.filter.outputs.test }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -23,12 +23,12 @@ jobs:
               - 'Dockerfile'
               - 'go.mod'
             test:
+              - '.github/**/*'
               - 'charts/envars-webhook/**/*'
               - 'charts/envars-webhook/Chart.yaml'
               - 'charts/envars-webhook/values.yaml'
 
   build-and-push-image:
-    name: Build Docker image and push to repositories
     needs: changes
     if: |
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
@@ -44,16 +44,13 @@ jobs:
 
     steps:
 
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Cache between builds
-        uses: actions/cache@v3
+      - uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
@@ -61,10 +58,10 @@ jobs:
           key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ matrix.go-version }}-
 
-      - name: Build
+      - name: build binary
         run: make envars-webhook
 
-      - name: Docker tags
+      - name: docker tags
         id: docker-tags
         uses: docker/metadata-action@v4
         with:
@@ -77,20 +74,17 @@ jobs:
             type=semver,pattern={{major}}
             type=sha,prefix=${{ github.ref_name }}-
 
-      - name: Set up Docker buildx
+      - uses: docker/setup-buildx-action@v2
         id: buildx
-        uses: docker/setup-buildx-action@v2
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+      - uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image and push to GitHub Container Registry
+      - uses: docker/build-push-action@v3
         id: docker-build
-        uses: docker/build-push-action@v3
         with:
           context: ./
           platforms: ${{ matrix.platform }}
@@ -98,13 +92,12 @@ jobs:
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
 
-      - name: Image name and digest
+      - name: image name and digest
         run: |
           echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"'
           echo ${{ steps.docker-build.outputs.digest }}
 
   test-webhook:
-    name: Test webhook
     needs: [build-and-push-image, changes]
     if: |
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
@@ -117,8 +110,7 @@ jobs:
 
     steps:
 
-    - name: Setup minikube
-      uses: medyagh/setup-minikube@master
+    - uses: medyagh/setup-minikube@master
       id: minikube
       with:
         minikube-version: 1.23.2
@@ -126,10 +118,9 @@ jobs:
         container-runtime: ${{ matrix.container-runtime }}
         kubernetes-version: v1.22.10
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-    - name: Deploy webhook
+    - name: deploy webhook
       timeout-minutes: 2
       run: |
         curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
@@ -142,11 +133,11 @@ jobs:
           sleep 1
         done
 
-    - name: Stage samples
+    - name: stage samples
       run: |
         make sample
 
-    - name: Verify pod-allowed
+    - name: verify pod-allowed
       timeout-minutes: 2
       run: |
         NAMESPACE=samples
@@ -154,7 +145,7 @@ jobs:
         until kubectl get pods -n $NAMESPACE | grep "pod-allowed" | grep "Completed" > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-allowed | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
 
-    - name: Verify pod-excluded
+    - name: verify pod-excluded
       timeout-minutes: 2
       run: |
         NAMESPACE=samples
@@ -162,7 +153,7 @@ jobs:
         until kubectl get pods -n $NAMESPACE | grep "pod-excluded" | grep "Completed" > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-excluded | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
 
-    - name: Verify pod-mixed
+    - name: verify pod-mixed
       timeout-minutes: 2
       run: |
         NAMESPACE=samples
@@ -172,7 +163,7 @@ jobs:
         kubectl logs -n $NAMESPACE pod-mixed store-gateway | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
         kubectl logs -n $NAMESPACE pod-mixed compactor | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
 
-    - name: Verify deployment
+    - name: verify deployment
       timeout-minutes: 2
       run: |
         NAMESPACE=samples
@@ -183,7 +174,7 @@ jobs:
           kubectl exec -n samples $POD -c ingester -- env | grep "NODE_MINIKUBE_K8S_IO_NAME"
         done
 
-    - name: Verify statefulset
+    - name: verify statefulset
       timeout-minutes: 2
       run: |
         NAMESPACE=samples
