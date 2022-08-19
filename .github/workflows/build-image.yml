@@ -100,24 +100,24 @@ jobs:
           kubectl get pods -n $NAMESPACE | tail -n +2
           sleep 1
         done
+    - name: Stage samples
+      run: |
+        make sample
     - name: Verify pod-allowed
       run: |
         NAMESPACE=samples
-        make sample
         kubectl apply -f samples/pod-allowed.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-allowed" | grep Completed > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-allowed | grep NODE_MINIKUBE_K8S_IO_NAME > /dev/null
     - name: Verify pod-excluded
       run: |
         NAMESPACE=samples
-        make sample
         kubectl apply -f samples/pod-excluded.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-excluded" | grep Completed > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-excluded | grep -v NODE_MINIKUBE_K8S_IO_NAME > /dev/null
     - name: Verify pod-mixed
       run: |
         NAMESPACE=samples
-        make sample
         kubectl apply -f samples/pod-mixed.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-mixed" | grep Completed > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-mixed ingester | grep NODE_MINIKUBE_K8S_IO_NAME > /dev/null
