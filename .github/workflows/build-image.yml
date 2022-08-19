@@ -9,8 +9,8 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ steps.filter.outputs.build }}
-      frontend: ${{ steps.filter.outputs.test }}
+      build: ${{ steps.filter.outputs.build }}
+      test: ${{ steps.filter.outputs.test }}
     steps:
       - uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
@@ -23,10 +23,11 @@ jobs:
               - 'Dockerfile'
               - 'go.mod'
             test:
-              - '.github/**/*'
               - 'charts/envars-webhook/**/*'
               - 'charts/envars-webhook/Chart.yaml'
               - 'charts/envars-webhook/values.yaml'
+              - 'samples/*'
+              - 'Makefile'
 
   build-and-push-image:
     needs: changes
