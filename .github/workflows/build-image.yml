@@ -128,8 +128,9 @@ jobs:
       env:
         NAMESPACE: webtest
       run: |
-#        curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
         IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
+#        curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+        
 #        cd charts/envars-webhook
 #        helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
 #        until kubectl get pods -n $NAMESPACE | grep "Running" > /dev/null; do
