@@ -61,6 +61,7 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
+  
+# The webhook will accept requests from PODs in the namespace below. 
 webhook:
   namespaceSelector: samples

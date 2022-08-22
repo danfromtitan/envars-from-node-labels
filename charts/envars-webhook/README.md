@@ -1,6 +1,6 @@
 # Usage
 
-Follow the instructions below to deploy envars-from-node-labels webhook.
+Follow the instructions below to deploy the envars-from-node-labels admission controller.
 
 
 ### Helm requirements
@@ -11,16 +11,10 @@ helm repo update
 helm search repo envars-webhook
 ```
 
-On a freshly cloned work directory, the chart dependency will be missing, so you need to update it.
-
-```bash
-cd setup/external-dns
-helm dep update
-helm dep list
-```
-
 
 ### Install/upgrade
+
+Update values as needed and deploy the webhook.
 
 ```bash
 NAMESPACE=webtest
@@ -44,6 +38,7 @@ kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
 
 
 ### Uninstall
+
 ```bash
 NAMESPACE=webtest
 helm uninstall -n $NAMESPACE envars-webhook

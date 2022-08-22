@@ -1,6 +1,6 @@
 apiVersion: v2
 name: envars-webhook
-description: Generate TLS cert and deploy the admission controller
+description: Generate TLS cert and deploy the webhook
 type: application
 appVersion: "0.1.0"
-version: 0.1.2
+version: 0.1.0
