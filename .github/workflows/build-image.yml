@@ -123,6 +123,8 @@ jobs:
         with:
           charts_dir: charts
         env:
+          CR_RELEASE_NAME_TEMPLATE: "helm-chart-{{ .Version }}"
+          CR_SKIP_EXISTING: "true"
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
   test:
