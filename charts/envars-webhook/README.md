@@ -1,6 +1,6 @@
 # Usage
 
-Follow the instructions below to deploy the admission controller.
+Follow the instructions below to deploy the admission controller webhook.
 
 
 ### Helm requirements
