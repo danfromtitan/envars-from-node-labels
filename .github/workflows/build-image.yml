@@ -116,9 +116,14 @@ jobs:
       - run: |
           git config --global user.name "$GITHUB_ACTOR"
           git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
-    
-      
-  
+
+      - uses: helm/chart-releaser-action@v1.4.0
+        with:
+          charts_dir: charts
+        env:
+          CR_SKIP_EXISTING: true
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
   test:
     needs: [build, changes, chart]
     if: |
