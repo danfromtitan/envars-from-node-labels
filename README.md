@@ -50,7 +50,7 @@ on selected cluster resources. These are configured as part of the webhook deplo
 - Kubernetes cluster ver 1.9.0 or above
 - ideally, for scripts to work out of the box, you'd want to use an EKS cluster. In lack of that you'd need to modify 
   deployment script and provide equivalent outcomes for the aws CLI commands.
-- `admissionregistration.k8s.io/v1beta1` API enabled. In addition to that, the `MutatingAdmissionWebhook` admission controller 
+- `admissionregistration.k8s.io/v1` API enabled. In addition to that, the `MutatingAdmissionWebhook` admission controller 
   should be added and [listed in the admission-control](https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html) 
   flag of `kube-apiserver`.
 - [GNU make](https://www.gnu.org/software/make/), [Go](https://golang.org) and [Docker engine](https://docs.docker.com/engine/install/) 
@@ -82,10 +82,10 @@ Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use 
 
 ### Makefile scripts
 
-- Verify you have `admissionregistration.k8s.io/v1beta1` installed in your cluster
+- Verify you have `admissionregistration.k8s.io/v1` installed in your cluster
 
 ```bash
-kubectl api-versions | grep admissionregistration.k8s.io/v1beta1
+kubectl api-versions | grep admissionregistration.k8s.io/v1
 ```
 
 - Create TLS self-signed certificate for the webhook, package cert, key and CAcert in a secret

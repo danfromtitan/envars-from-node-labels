@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "envars-webhook.fullname" -}}
+{{- define "envars-webhook.name" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -55,7 +55,7 @@ Create the name of the service account to use
 */}}
 {{- define "envars-webhook.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "envars-webhook.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "envars-webhook.name" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

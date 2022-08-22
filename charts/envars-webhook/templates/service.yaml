@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "envars-webhook.fullname" . }}
+  name: {{ include "envars-webhook.name" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "envars-webhook.labels" . | nindent 4 }}
