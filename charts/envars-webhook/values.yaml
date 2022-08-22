@@ -62,6 +62,9 @@ tolerations: []
 
 affinity: {}
   
-# The webhook will accept requests from PODs in the namespace below. 
+# Webhook settings
 webhook:
+  # The namespace that the webhook would accept requests from
   namespaceSelector: samples
+  # Show the JSON body for requests and responses in webhook logs
+  verboseLogs: false

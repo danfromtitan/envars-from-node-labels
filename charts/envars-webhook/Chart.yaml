@@ -3,4 +3,4 @@ name: envars-webhook
 description: Generate TLS cert and deploy the webhook
 type: application
 appVersion: "0.1.0"
-version: 0.1.1
+version: 0.1.2
