@@ -1,6 +1,6 @@
 # Usage
 
-Follow the instructions below to deploy the envars-from-node-labels admission controller.
+Follow the instructions below to deploy the admission controller.
 
 
 ### Helm requirements
