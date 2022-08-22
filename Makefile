@@ -45,11 +45,11 @@ undeploy:
 	NAMESPACE=${NAMESPACE} IMAGE_URL=${IMAGE_URL} deploy/deploy.sh delete
 
 sample:
-	kubectl apply -f samples/namespace.yaml
-	kubectl apply -f samples/env-configmap.yaml
-	kubectl apply -f samples/env-secrets.yaml
+	kubectl apply -f test/namespace.yaml
+	kubectl apply -f test/env-configmap.yaml
+	kubectl apply -f test/env-secrets.yaml
 
 unsample:
-	kubectl delete -f samples/ || true
+	kubectl delete -f test/ || true
 
 .PHONY: image push tls deploy undeploy sample unsample

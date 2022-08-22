@@ -161,7 +161,7 @@ make sample
   pairs from pre-existing configmap along with the env vars created from node labels.
 
 ```bash
-kubectl apply -f samples/pod-allowed.yaml
+kubectl apply -f test/pod-allowed.yaml
 kubectl logs -n samples pod-allowed
 ```
 
@@ -169,7 +169,7 @@ kubectl logs -n samples pod-allowed
   return the key-value pairs from pre-existing configmap and secret.
 
 ```bash
-kubectl apply -f samples/pod-excluded.yaml
+kubectl apply -f test/pod-excluded.yaml
 kubectl logs -n samples pod-excluded
 ```
 
@@ -178,7 +178,7 @@ kubectl logs -n samples pod-excluded
   labels when the container was allowed.
 
 ```bash
-kubectl apply -f samples/pod-mixed.yaml
+kubectl apply -f test/pod-mixed.yaml
 kubectl logs -n samples pod-mixed ingester
 kubectl logs -n samples pod-mixed store-gateway
 kubectl logs -n samples pod-mixed compactor
@@ -189,7 +189,7 @@ kubectl logs -n samples pod-mixed compactor
   along with the env vars created from node labels.
 
 ```bash
-kubectl apply -f samples/deployment.yaml
+kubectl apply -f test/deployment.yaml
 kubectl logs -n samples deployment-123 prober
 kubectl exec -it -n samples deployment-123 -c ingester -- env
 ```
@@ -199,7 +199,7 @@ kubectl exec -it -n samples deployment-123 -c ingester -- env
   with the env vars created from node labels.
 
 ```bash
-kubectl apply -f samples/statefulset.yaml
+kubectl apply -f test/statefulset.yaml
 kubectl logs -n samples statefulset-0 prober
 kubectl exec -it -n samples statefulset-0 -- env
 ```
