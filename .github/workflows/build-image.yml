@@ -2,7 +2,7 @@ name: Build, test and publish
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ "master", "develop" ]
     tags: [ "v*.*.*" ]
   workflow_dispatch:
     inputs:
