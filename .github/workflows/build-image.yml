@@ -2,39 +2,71 @@ name: Build, test and publish
 
 on:
   push:
-    branches: [ "master", "develop" ]
+    branches: [ "**" ]
     tags: [ "v*.*.*" ]
+  workflow_dispatch:
+    inputs:
+      go-version:
+        default: "1.17"
+        description: 'Go version'
+        required: true
 
 jobs:
-  build-and-push-image:
-    name: Build Docker image and push to repositories
-    strategy:
-      matrix:
-        go-version: ["1.17"]
-        os: ["ubuntu-latest"]
-        platform: ["linux/amd64"]
-    runs-on: ${{ matrix.os }}
+  changes:
+    if: ${{ github.repository == 'danfromtitan/envars-from-node-labels' }}
+    runs-on: ubuntu-latest
     outputs:
-      build-metadata: ${{ steps.docker-build.outputs.metadata }}
+      build: ${{ steps.filter.outputs.build }}
+      chart: ${{ steps.filter.outputs.chart }}
+      test: ${{ steps.filter.outputs.test }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: filter
         with:
-          go-version: ${{ matrix.go-version }}
-      - name: Cache between builds
-        uses: actions/cache@v3
+          base: ${{ github.ref }}
+          filters: |
+            build:
+              - 'cmd/envars-webhook/*'
+              - 'Dockerfile'
+              - 'go.mod'
+              - 'Makefile'
+            chart:
+              - 'charts/envars-webhook/**/*'
+            test:
+              - '.github/**/*'
+              - 'samples/*'
+
+  build:
+    needs: changes
+    if: |
+      (github.repository == 'danfromtitan/envars-from-node-labels') &&
+      (needs.changes.outputs.build == 'true')
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.image-output.outputs.image-tag }}
+      image-name: ${{ steps.image-output.outputs.image-name }}
+      image-digest: ${{ steps.image-output.outputs.image-digest }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ github.event.inputs.go-version }}
+
+      - uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-${{ matrix.go-version }}-
-      - name: Build
-        run: make envars-webhook
-      - name: Docker tags
-        id: docker-tags
+          key: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-
+
+      - run: make envars-webhook
+
+      - id: docker-tags
         uses: docker/metadata-action@v4
         with:
           images: |
@@ -45,102 +77,144 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha,prefix=${{ github.ref_name }}-
-      - name: Set up Docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+      - uses: docker/setup-buildx-action@v2
+        id: buildx
+
+      - uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build image and push to GitHub Container Registry
+
+      - uses: docker/build-push-action@v3
         id: docker-build
-        uses: docker/build-push-action@v3
         with:
           context: ./
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
-      - name: Image name and digest
-        run: |
-          echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"'
-          echo ${{ steps.docker-build.outputs.digest }}
 
-  test-webhook:
-    name: Test webhook
-    strategy:
-      matrix:
-        os: ["ubuntu-latest"]
-        container-runtime: ["containerd"]
-    runs-on: ${{ matrix.os }}
-    needs:
-      - build-and-push-image
+      - id: image-output
+        run: |
+          echo ::set-output name=image-tag::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
+          echo ::set-output name=image-name::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"')
+          echo ::set-output name=image-digest::${{ steps.docker-build.outputs.digest }}
+
+  chart:
+    needs: changes
+    if: |
+      (github.repository == 'danfromtitan/envars-from-node-labels') &&
+      (needs.changes.outputs.chart == 'true')
+    runs-on: ubuntu-latest
+    
     steps:
-    - name: Setup minikube
-      uses: medyagh/setup-minikube@master
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - run: |
+          git config --global user.name "$GITHUB_ACTOR"
+          git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - uses: helm/chart-releaser-action@v1.4.0
+        with:
+          charts_dir: charts
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  test:
+    needs: [build, changes, chart]
+    if: |
+      always() &&
+      (github.repository == 'danfromtitan/envars-from-node-labels') &&
+      (needs.changes.outputs.build == 'true' || needs.changes.outputs.chart == 'true' || needs.changes.outputs.test == 'true')
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: medyagh/setup-minikube@master
       id: minikube
       with:
         minikube-version: 1.23.2
         driver: docker
-        container-runtime: ${{ matrix.container-runtime }}
+        container-runtime: containerd
         kubernetes-version: v1.22.10
-    - name: Checkout code
-      uses: actions/checkout@v3
-    - name: Deploy webhook
-      timeout-minutes: 2
+
+    - uses: actions/checkout@v3
+
+    - name: setup helm
       run: |
         curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-        cd charts/envars-webhook
-        NAMESPACE=webtest
-        IMAGE_TAG=$(echo '${{ needs.build-and-push-image.outputs.build-metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
-        helm install -n $NAMESPACE --create-namespace envars-webhook . -f values.yaml --set image.tag="$IMAGE_TAG"
+        helm repo add envars-webhook https://danfromtitan.github.io/envars-from-node-labels/
+        helm repo update
+        helm search repo envars-webhook -l
+
+    - name: deploy webhook
+      timeout-minutes: 2
+      env:
+        NAMESPACE: webtest
+      run: |
+        IMAGE_TAG=latest
+        [[ "${{contains(needs.build.result, 'success') }}" == "true" ]] && IMAGE_TAG=${{ needs.build.outputs.image-tag }}
+        helm install -n $NAMESPACE --create-namespace envars-webhook envars-webhook/envars-webhook --set image.tag="$IMAGE_TAG"
         until kubectl get pods -n $NAMESPACE | grep "Running" > /dev/null; do
           kubectl get pods -n $NAMESPACE | tail -n +2
           sleep 1
         done
-    - name: Stage samples
+
+    - name: stage samples
       run: |
         make sample
-    - name: Verify pod-allowed
+
+    - name: verify pod-allowed
       timeout-minutes: 2
+      env:
+        NAMESPACE: samples
       run: |
-        NAMESPACE=samples
         kubectl apply -f samples/pod-allowed.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-allowed" | grep "Completed" > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-allowed | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
-    - name: Verify pod-excluded
+
+    - name: verify pod-excluded
       timeout-minutes: 2
+      env:
+        NAMESPACE: samples
       run: |
-        NAMESPACE=samples
         kubectl apply -f samples/pod-excluded.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-excluded" | grep "Completed" > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-excluded | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
-    - name: Verify pod-mixed
+
+    - name: verify pod-mixed
       timeout-minutes: 2
+      env:
+        NAMESPACE: samples
       run: |
-        NAMESPACE=samples
         kubectl apply -f samples/pod-mixed.yaml
         until kubectl get pods -n $NAMESPACE | grep "pod-mixed" | grep "Completed" > /dev/null; do sleep 1; done
         kubectl logs -n $NAMESPACE pod-mixed ingester | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
         kubectl logs -n $NAMESPACE pod-mixed store-gateway | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
         kubectl logs -n $NAMESPACE pod-mixed compactor | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
-    - name: Verify deployment
+
+    - name: verify deployment
       timeout-minutes: 2
+      env:
+        NAMESPACE: samples
       run: |
-        NAMESPACE=samples
         kubectl apply -f samples/deployment.yaml
         until [[ $(kubectl get pods -n $NAMESPACE | grep "deployment" | grep "Running" | wc -l) == "2" ]]; do sleep 1; done
         for POD in $(kubectl get pods -n $NAMESPACE | grep "deployment" | awk '{print $1}'); do
           kubectl logs -n samples $POD prober | grep "NODE_MINIKUBE_K8S_IO_NAME"
           kubectl exec -n samples $POD -c ingester -- env | grep "NODE_MINIKUBE_K8S_IO_NAME"
         done
-    - name: Verify statefulset
+
+    - name: verify statefulset
       timeout-minutes: 2
+      env:
+        NAMESPACE: samples
       run: |
-        NAMESPACE=samples
         kubectl apply -f samples/statefulset.yaml
         until [[ $(kubectl get pods -n $NAMESPACE | grep "statefulset" | grep "Running" | wc -l) == "2" ]]; do sleep 1; done
         for POD in $(kubectl get pods -n $NAMESPACE | grep "statefulset" | awk '{print $1}'); do
