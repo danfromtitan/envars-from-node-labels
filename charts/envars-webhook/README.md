@@ -2,7 +2,6 @@
 
 Follow the instructions below to deploy the admission controller.
 
-
 ### Helm requirements
 
 ```bash
