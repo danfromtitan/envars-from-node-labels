@@ -8,8 +8,8 @@ metadata:
 data:
   config.yml: |
     verboseLogs: {{ .Values.webhook.verboseLogs | default "false" }}
+    {{- with .Values.webhook.containersAllowed }}
     containersAllowed:
-      compactor: false
-      ingester: true
-      prober: true
-      store-gateway: true
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+      

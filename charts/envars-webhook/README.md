@@ -21,19 +21,15 @@ helm upgrade --install \
   --namespace $NAMESPACE \
   --create-namespace \
   envars-webhook envars-webhook/envars-webhook \
-  -f values.yaml
+  --set webhook.namespaceSelector=samples \
+  --set webhook.verboseLogs=true \
+  --set webhook.containersAllowed.ingester=true,webhook.containersAllowed.prober=true,webhook.containersAllowed.store-gateway=true
 ```
 
 
 ### Verification
 
-```bash
-NAMESPACE=webtest
-kubectl get secret -n $NAMESPACE envars-webhook-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d | openssl x509 -text -noout
-kubectl get pods -n $NAMESPACE
-kubectl logs -f -n $NAMESPACE pod-name
-kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
-```
+Follow the notes in Helm deployment output to verify the deployment.
 
 
 ### Uninstall
