@@ -82,6 +82,8 @@ Follow the [instructions in Helm chart](charts/envars-webhook/README.md) to use 
 
 ### Makefile scripts
 
+[Skip to Verification](#verification) if you installed from the Helm chart.
+
 - Verify you have `admissionregistration.k8s.io/v1` installed in your cluster
 
 ```bash

@@ -18,11 +18,11 @@ Update values as needed and deploy the webhook.
 ```bash
 NAMESPACE=webtest
 helm upgrade --install \
-  --namespace $NAMESPACE \
+  -n $NAMESPACE \
   --create-namespace \
   envars-webhook envars-webhook/envars-webhook \
   --set webhook.namespaceSelector=samples \
-  --set webhook.verboseLogs=true \
+  --set webhook.verboseLogs=false \
   --set webhook.containersAllowed.ingester=true,webhook.containersAllowed.prober=true,webhook.containersAllowed.store-gateway=true
 ```
 
