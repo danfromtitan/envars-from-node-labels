@@ -166,7 +166,8 @@ jobs:
       run: |
         IMAGE_TAG=latest
         [[ "${{contains(needs.build.result, 'success') }}" == "true" ]] && IMAGE_TAG=${{ needs.build.outputs.image-tag }}
-        helm install -n $NAMESPACE --create-namespace envars-webhook envars-webhook/envars-webhook --set image.tag="$IMAGE_TAG"
+        helm install -n $NAMESPACE --create-namespace envars-webhook envars-webhook/envars-webhook --set image.tag="$IMAGE_TAG" \
+          --set webhook.containersAllowed.ingester=true,webhook.containersAllowed.prober=true,webhook.containersAllowed.store-gateway=true
         until kubectl get pods -n $NAMESPACE | grep "Running" > /dev/null; do
           kubectl get pods -n $NAMESPACE | tail -n +2
           sleep 1

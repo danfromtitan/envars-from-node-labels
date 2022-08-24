@@ -68,3 +68,8 @@ webhook:
   namespaceSelector: samples
   # Show the JSON body for requests and responses in webhook logs
   verboseLogs: false
+  # Map of container names allowed to receive node labels. False value or missing container name means node labels are not exposed.
+  containersAllowed:
+    ingester: false
+    prober: false
+    store-gateway: false

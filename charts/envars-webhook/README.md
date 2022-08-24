@@ -21,7 +21,9 @@ helm upgrade --install \
   --namespace $NAMESPACE \
   --create-namespace \
   envars-webhook envars-webhook/envars-webhook \
-  -f values.yaml
+  --set webhook.namespaceSelector=samples \
+  --set webhook.verboseLogs=true \
+  --set webhook.containersAllowed.ingester=true,webhook.containersAllowed.prober=true,webhook.containersAllowed.store-gateway=true
 ```
 
 
