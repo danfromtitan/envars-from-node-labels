@@ -24,7 +24,7 @@ webhooks:
       caBundle: {{ $ca.Cert | b64enc }}
     namespaceSelector:
       matchLabels:
-        name: {{ .Values.webhook.namespaceSelector }}
+        {{ .Values.webhook.namespaceSelectorLabel | default "name" }}: {{ .Values.webhook.namespaceSelector }}
     rules:
       - operations: [ "CREATE", "UPDATE", "DELETE" ]
         apiGroups: [""]
