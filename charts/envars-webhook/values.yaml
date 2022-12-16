@@ -37,8 +37,7 @@ service:
   type: ClusterIP
   port: 443
 
-resources:
-  {}
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -67,10 +66,13 @@ affinity: {}
 webhook:
   # The namespace that the webhook would accept requests from
   namespaceSelector: samples
+
   # The label to use for selecting namespace
   # namespaceSelectorLabel: name
+
   # Show the JSON body for requests and responses in webhook logs
   verboseLogs: false
+
   # Map of container names allowed to receive node labels. False value or missing container name means node labels are not exposed.
   containersAllowed:
     ingester: false
