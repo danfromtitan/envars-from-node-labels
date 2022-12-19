@@ -21,7 +21,7 @@ set -euo pipefail
 
 basedir="$(dirname "$0")"
 
-# Read the PEM-encoded CA certificate from secret, base64 decode it and replace the `${CA_PEM_B64}` placeholder 
+# Read the PEM-encoded CA certificate from secret, base64 decode it and replace the `${CA_PEM_B64}` placeholder
 # in the YAML template, then create the Kubernetes admission controller resources
 CA_PEM_B64="$(kubectl get secret -n ${NAMESPACE} envars-webhook-tls -o 'go-template={{index .data "ca.crt"}}')"
 

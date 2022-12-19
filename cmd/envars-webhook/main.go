@@ -16,16 +16,17 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"path/filepath"
+
+	"gopkg.in/yaml.v2"
 	admission "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"log"
-	"net/http"
-	"path/filepath"
 )
 
 const (
@@ -39,6 +40,7 @@ var (
 	config      Config
 )
 
+// Config program
 type Config struct {
 	VerboseLogs       bool            `yaml:"verboseLogs"`
 	ContainersAllowed map[string]bool `yaml:"containersAllowed"`

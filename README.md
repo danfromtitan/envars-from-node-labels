@@ -1,10 +1,10 @@
 # Create container env vars from node labels
 
-This repository contains a K8s admission controller that implements a [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) 
+This repository contains a K8s admission controller that implements a [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook)
 which together with additional helper methods would expose node labels as environment variables in selected pod containers.
 
-The original problem it solves was to expose the availability zone information from node labels to pod environment 
-variables. Often times, highly available application need to be aware of the availability zone of their deployment and, 
+The original problem it solves was to expose the availability zone information from node labels to pod environment
+variables. Often times, highly available application need to be aware of the availability zone of their deployment and,
 unless you have dedicated deployments for each AZ, that configuration cannot be given to a container at deployment time.
 
 The current implementation went beyond the initial scope and features:
@@ -14,8 +14,8 @@ The current implementation went beyond the initial scope and features:
 - insert the env vars node labels next to existing env vars from other sources (i.e. configmap, secret)
 - support for single pods as well as deployments and stateful sets
 
-As with [any other admission controller](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects), 
-you need to stay clean of unwanted results during pod creation and deletion events. The implementation comes with a 
+As with [any other admission controller](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#side-effects),
+you need to stay clean of unwanted results during pod creation and deletion events. The implementation comes with a
 number of risk mitigations factors:
 
 - admission requests are limited to pods and pods/binding resources
@@ -26,8 +26,8 @@ number of risk mitigations factors:
 
 ## Design in a nutshell
 
-The implementation combines the JSON patching feature of the mutating admission controller with in-cluster client-go calls 
-to K8s API for selected events. That is needed because, on one side, env variables are immutable resources, and on the 
+The implementation combines the JSON patching feature of the mutating admission controller with in-cluster client-go calls
+to K8s API for selected events. That is needed because, on one side, env variables are immutable resources, and on the
 other side, node labels are unknown to a pod until the pod is scheduled for binding to a node.
 
 The sequence of events is:
@@ -41,25 +41,25 @@ The sequence of events is:
 - additional consideration is given to pod updates, EnvFromSource is re-patched with the existing secret to avoid an immutable resource exception
 - when pod is deleted, the webhook looks for the secret name label of the pod and if found, it deletes the secret.
 
-For client-go request to work with in-cluster API calls, the service account running the webhook pod needs permissions 
-on selected cluster resources. These are configured as part of the webhook deployment.  
+For client-go request to work with in-cluster API calls, the service account running the webhook pod needs permissions
+on selected cluster resources. These are configured as part of the webhook deployment.
 
 
 ## Prerequisites
 
 - Kubernetes cluster ver 1.9.0 or above
-- ideally, for scripts to work out of the box, you'd want to use an EKS cluster. In lack of that you'd need to modify 
+- ideally, for scripts to work out of the box, you'd want to use an EKS cluster. In lack of that you'd need to modify
   deployment script and provide equivalent outcomes for the aws CLI commands.
-- `admissionregistration.k8s.io/v1` API enabled. In addition to that, the `MutatingAdmissionWebhook` admission controller 
-  should be added and [listed in the admission-control](https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html) 
+- `admissionregistration.k8s.io/v1` API enabled. In addition to that, the `MutatingAdmissionWebhook` admission controller
+  should be added and [listed in the admission-control](https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html)
   flag of `kube-apiserver`.
-- [GNU make](https://www.gnu.org/software/make/), [Go](https://golang.org) and [Docker engine](https://docs.docker.com/engine/install/) 
+- [GNU make](https://www.gnu.org/software/make/), [Go](https://golang.org) and [Docker engine](https://docs.docker.com/engine/install/)
   are required to build the image
 
 
 ## Build
 
-You can always use the image from the [build pipeline](https://github.com/danfromtitan/envars-from-node-labels/pkgs/container/envars-from-node-labels). 
+You can always use the image from the [build pipeline](https://github.com/danfromtitan/envars-from-node-labels/pkgs/container/envars-from-node-labels).
 Should you need to build your own, follow the steps below to create and push the image to a private repository.
 
 ```bash
@@ -70,8 +70,8 @@ make push
 
 ## Deployment
 
-For deployment, you can use either the [Helm chart included with the project](./charts/envars-webhook) or 
-the [Makefile](./Makefile) scripted approach. Both methods achieve the same outcome, including the creation ot the TLS 
+For deployment, you can use either the [Helm chart included with the project](./charts/envars-webhook) or
+the [Makefile](./Makefile) scripted approach. Both methods achieve the same outcome, including the creation of the TLS
 self-signed certificate that will be used by the webhook.
 
 
@@ -97,7 +97,7 @@ export NAMESPACE=webtest  # optional step - if not specified, it defaults to 'en
 make tls
 ```
 
-- If you deploy pods from a namespace different from `samples`, update `MutatingWebhookConfiguration` in 
+- If you deploy pods from a namespace different from `samples`, update `MutatingWebhookConfiguration` in
 _deploy/deployment.yaml.template_ to accept requests from that namespace instead.
 - NB: Below ${NAMESPACE} is for where the webhook itself gets deployed.
 
@@ -110,8 +110,8 @@ webhooks:
         name: samples
 ```
 
-- In deployment configmap, enable verbose logs to see the JSON body for request and response in server logs. 
-- In case you deploy pods with different names than the `samples` provided, update container names that are allowed to 
+- In deployment configmap, enable verbose logs to see the JSON body for request and response in server logs.
+- In case you deploy pods with different names than the `samples` provided, update container names that are allowed to
   receive env vars from node labels.
 
 ```yaml
@@ -152,14 +152,14 @@ kubectl logs -f -n $NAMESPACE pod-name
 kubectl get mutatingwebhookconfigurations envars-webhook -o yaml
 ```
 
-- Create a test namespace with a pre-existing configmap and secret. Note the unsample target will clean up all resources 
-  under the samples directory. 
+- Create a test namespace with a pre-existing configmap and secret. Note the unsample target will clean up all resources
+  under the samples directory.
 
 ```bash
 make sample
 ```
 
-- Create a pod with a single container that has a pre-existing configmap. The container's env should return the key-value 
+- Create a pod with a single container that has a pre-existing configmap. The container's env should return the key-value
   pairs from pre-existing configmap along with the env vars created from node labels.
 
 ```bash
@@ -175,8 +175,8 @@ kubectl apply -f test/pod-excluded.yaml
 kubectl logs -n samples pod-excluded
 ```
 
-- Create a pod with mixed containers, some allowed and some not allowed to take env vars from noe labels. The containers' 
-  env should return the key-value pairs from pre-existing configmap and secret along with the env vars created from node 
+- Create a pod with mixed containers, some allowed and some not allowed to take env vars from node labels. The containers'
+  env should return the key-value pairs from pre-existing configmap and secret along with the env vars created from node
   labels when the container was allowed.
 
 ```bash
@@ -186,8 +186,8 @@ kubectl logs -n samples pod-mixed store-gateway
 kubectl logs -n samples pod-mixed compactor
 ```
 
-- Create a deployment with a(n init) container that has a pre-existing configmap and secret and is allowed to receive 
-  env vars from node labels. The containers' env should return the key-value pairs from pre-existing configmap and secret, 
+- Create a deployment with a(n init) container that has a pre-existing configmap and secret and is allowed to receive
+  env vars from node labels. The containers' env should return the key-value pairs from pre-existing configmap and secret,
   along with the env vars created from node labels.
 
 ```bash
@@ -215,5 +215,5 @@ make unsample
 
 ## Credits
 
-The admission controller implementation was inspired from the outstanding 
+The admission controller implementation was inspired from the outstanding
 [admission-controller-webhook-demo](https://github.com/stackrox/admission-controller-webhook-demo) project.

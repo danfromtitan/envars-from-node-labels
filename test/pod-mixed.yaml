@@ -35,4 +35,3 @@ spec:
             name: env-configmap
         - secretRef:
             name: env-secrets
-

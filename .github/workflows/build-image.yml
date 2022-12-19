@@ -108,7 +108,7 @@ jobs:
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.chart == 'true')
     runs-on: ubuntu-latest
-    
+
     steps:
 
       - uses: actions/checkout@v3
@@ -123,7 +123,7 @@ jobs:
       - name: lint helm chart
         run: |
           helm lint ./charts/envars-webhook
-      
+
       - uses: helm/chart-releaser-action@v1.4.0
         with:
           charts_dir: charts

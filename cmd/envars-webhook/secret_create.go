@@ -17,12 +17,13 @@ package main
 import (
 	"context"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"regexp"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Map the node labels to environment variables. First we find the node object using the name found in the pods/binding
@@ -99,7 +100,7 @@ func createSecret(binding corev1.Binding) error {
 		} else if err != nil {
 			panic(fmt.Errorf("failed to create secret %s: %v", secretName, err))
 		} else {
-			log.Printf("secret %s created succesfully", createdSecret.Name)
+			log.Printf("secret %s created successfully", createdSecret.Name)
 		}
 	}
 

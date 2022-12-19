@@ -72,7 +72,7 @@ metadata:
   namespace: ${NAMESPACE}
 type: kubernetes.io/tls
 data:
-  tls.key: $(cat ${key_dir}/envars-webhook-tls.key | base64 -w 0)
-  tls.crt: $(cat ${key_dir}/envars-webhook-tls.crt | base64 -w 0)
-  ca.crt: $(cat ${key_dir}/ca.crt | base64 -w 0)
+  tls.key: $(cat "${key_dir}"/envars-webhook-tls.key | base64 -w 0)
+  tls.crt: $(cat "${key_dir}"/envars-webhook-tls.crt | base64 -w 0)
+  ca.crt: $(cat "${key_dir}"/ca.crt | base64 -w 0)
 EOF

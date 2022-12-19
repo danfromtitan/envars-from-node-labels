@@ -12,4 +12,3 @@ data:
     containersAllowed:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-      

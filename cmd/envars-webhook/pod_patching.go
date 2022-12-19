@@ -16,9 +16,10 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
-	"log"
 )
 
 // Add secret reference next to existing sources. The idea here is to preserve configuration coming from an upstream
@@ -26,10 +27,10 @@ import (
 // The secret name is created dynamically and stored in pod metadata for further use (i.e. create and delete).
 //
 // There is a bug in K8s API that inserts different envSources content in the new object during UPDATE events:
-// - if there is an existing envSources from upstream (i.e. Helm chart), our env vars secret is not found in the new
-//   object, so we need to re-patch envSources during an UPDATE event.
-// - when envSources comes empty from upstream (i.e. Helm chart), the new object does have our env vars secret in the
-//   new object, and we need to prevent re-patching, otherwise the envSources would have the same secret twice.
+//   - if there is an existing envSources from upstream (i.e. Helm chart), our env vars secret is not found in the new
+//     object, so we need to re-patch envSources during an UPDATE event.
+//   - when envSources comes empty from upstream (i.e. Helm chart), the new object does have our env vars secret in the
+//     new object, and we need to prevent re-patching, otherwise the envSources would have the same secret twice.
 func containerEnvFromSource(envSources []corev1.EnvFromSource, secretName string) []corev1.EnvFromSource {
 	secretSource := &corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{

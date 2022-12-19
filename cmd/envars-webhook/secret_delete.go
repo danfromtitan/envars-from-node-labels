@@ -17,10 +17,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 )
 
 // Delete the envs secret when pod is deleted. This helps cleanup secrets that we created to hold them environment
@@ -43,7 +44,7 @@ func deleteSecret(pod corev1.Pod) error {
 		} else if err != nil {
 			panic(fmt.Errorf("failed to delete secret %s: %v", secretName, err))
 		} else {
-			log.Printf("secret %s deleted succesfully", secretName)
+			log.Printf("secret %s deleted successfully", secretName)
 		}
 	}
 
