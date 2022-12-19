@@ -98,9 +98,9 @@ jobs:
 
       - id: image-output
         run: |
-          echo ::set-output name=image-tag::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]')
-          echo ::set-output name=image-name::$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"')
-          echo ::set-output name=image-digest::${{ steps.docker-build.outputs.digest }}
+          echo image-tag=$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name" | split(",")[-1] | split(":")[-1]') >>$GITHUB_OUTPUT
+          echo image-name=$(echo '${{ steps.docker-build.outputs.metadata }}' | jq -r '."image.name"') >>$GITHUB_OUTPUT
+          echo image-digest=${{ steps.docker-build.outputs.digest }} >>$GITHUB_OUTPUT
 
   chart:
     needs: changes
