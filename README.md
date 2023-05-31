@@ -106,8 +106,10 @@ webhooks:
   - name: envars-webhook.${NAMESPACE}.svc
     # [...]
     namespaceSelector:
-      matchLabels:
-        name: samples
+      matchExpressions:
+        - key: name
+          operator: In
+          values: ["samples"]
 ```
 
 - In deployment configmap, enable verbose logs to see the JSON body for request and response in server logs.

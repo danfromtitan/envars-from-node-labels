@@ -64,11 +64,12 @@ affinity: {}
 
 # Webhook settings
 webhook:
-  # The namespace that the webhook would accept requests from
-  namespaceSelector: samples
+  # The namespace(s) that the webhook would accept requests from.
+  namespaceSelector:
+    - samples
 
   # The label to use for selecting namespace
-  # namespaceSelectorLabel: name
+  namespaceSelectorLabel: name
 
   # Show the JSON body for requests and responses in webhook logs
   verboseLogs: false

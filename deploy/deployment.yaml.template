@@ -82,8 +82,10 @@ webhooks:
         path: "/mutate"
       caBundle: ${CA_PEM_B64}
     namespaceSelector:
-      matchLabels:
-        name: samples
+      matchExpressions:
+        - key: name
+          operator: In
+          values: ["samples"]
     rules:
       - operations: [ "CREATE", "UPDATE", "DELETE" ]
         apiGroups: [""]

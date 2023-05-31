@@ -8,7 +8,7 @@ metadata:
   labels:
     {{- include "envars-webhook.labels" . | nindent 4 }}
   annotations:
-    "helm.sh/hook": "pre-install"
+    "helm.sh/hook": "post-install,post-upgrade,pre-delete"
     "helm.sh/hook-delete-policy": "before-hook-creation"
 webhooks:
   - name: {{ include "envars-webhook.name" . }}.{{ .Release.Namespace }}.svc
@@ -23,8 +23,13 @@ webhooks:
         path: "/mutate"
       caBundle: {{ $ca.Cert | b64enc }}
     namespaceSelector:
-      matchLabels:
-        {{ .Values.webhook.namespaceSelectorLabel | default "name" }}: {{ .Values.webhook.namespaceSelector }}
+      matchExpressions:
+        - key: {{ .Values.webhook.namespaceSelectorLabel }}
+          operator: In
+          values:
+          {{- with .Values.webhook.namespaceSelector }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
     rules:
       - operations: [ "CREATE", "UPDATE", "DELETE" ]
         apiGroups: [""]
