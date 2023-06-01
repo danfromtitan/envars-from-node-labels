@@ -1,6 +1,8 @@
 apiVersion: v2
 name: envars-webhook
 description: Generate TLS cert and deploy the webhook
+home: "https://github.com/danfromtitan/envars-from-node-labels"
+sources: ["https://github.com/danfromtitan/envars-from-node-labels"]
 type: application
 appVersion: "0.1.0"
-version: 0.1.6
+version: 0.2.0
