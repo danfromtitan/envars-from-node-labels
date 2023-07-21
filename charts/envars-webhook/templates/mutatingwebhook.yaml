@@ -7,9 +7,6 @@ metadata:
   name: {{ include "envars-webhook.name" . }}
   labels:
     {{- include "envars-webhook.labels" . | nindent 4 }}
-  annotations:
-    "helm.sh/hook": "post-install,post-upgrade,pre-delete"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
 webhooks:
   - name: {{ include "envars-webhook.name" . }}.{{ .Release.Namespace }}.svc
     admissionReviewVersions: ["v1"]
@@ -44,9 +41,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "envars-webhook.labels" . | nindent 4 }}
-  annotations:
-    "helm.sh/hook": "pre-install"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
 type: kubernetes.io/tls
 data:
   tls.crt: {{ $cert.Cert | b64enc }}
