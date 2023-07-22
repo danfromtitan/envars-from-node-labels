@@ -3,6 +3,19 @@ entries:
   envars-webhook:
   - apiVersion: v2
     appVersion: 0.1.0
+    created: "2023-07-22T13:46:33.3353627Z"
+    description: Generate TLS cert and deploy the webhook
+    digest: 456d34f88bb570ae95acbebd3ebf6060847b95540c654aac6505b7559371db29
+    home: https://github.com/danfromtitan/envars-from-node-labels
+    name: envars-webhook
+    sources:
+    - https://github.com/danfromtitan/envars-from-node-labels
+    type: application
+    urls:
+    - https://github.com/danfromtitan/envars-from-node-labels/releases/download/helm-chart-0.2.1/envars-webhook-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
+    appVersion: 0.1.0
     created: "2023-06-01T06:08:55.503037929Z"
     description: Generate TLS cert and deploy the webhook
     digest: e7f37edee7da6fe0b2029514b905155ddceca5e25be5ce1f848436e754b127c8
@@ -44,4 +57,4 @@ entries:
     urls:
     - https://github.com/danfromtitan/envars-from-node-labels/releases/download/helm-chart-0.1.4/envars-webhook-0.1.4.tgz
     version: 0.1.4
-generated: "2023-06-01T06:08:55.503049129Z"
+generated: "2023-07-22T13:46:33.335560701Z"
