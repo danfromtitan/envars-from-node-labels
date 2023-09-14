@@ -11,6 +11,11 @@ on:
         description: 'Go version'
         required: true
 
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
 jobs:
   changes:
     if: ${{ github.repository == 'danfromtitan/envars-from-node-labels' }}
@@ -88,11 +93,34 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: docker/build-push-action@v3
-        id: docker-build
+        id: docker-build-amd
         with:
           context: ./
           platforms: linux/amd64
+          outputs: type=docker,push=false
+          tags: ${{ steps.docker-tags.outputs.tags }}
+          labels: ${{ steps.docker-tags.outputs.labels }}
+
+      - run: |
+          export GOARCH=arm64
+          make envars-webhook
+
+      - uses: docker/build-push-action@v3
+        id: docker-build-arm
+        with:
+          context: ./
+          platforms: linux/arm64
+          outputs: type=docker,push=false
+          tags: ${{ steps.docker-tags.outputs.tags }}
+          labels: ${{ steps.docker-tags.outputs.labels }}
+
+      - uses: docker/build-push-action@v3
+        id: docker-build
+        with:
+          context: ./
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
+          outputs: type=image,push=true
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
 
