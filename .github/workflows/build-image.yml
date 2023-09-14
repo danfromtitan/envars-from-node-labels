@@ -11,11 +11,6 @@ on:
         description: 'Go version'
         required: true
 
-permissions:
-  contents: read
-  id-token: write
-  packages: write
-
 jobs:
   changes:
     if: ${{ github.repository == 'danfromtitan/envars-from-node-labels' }}
@@ -69,6 +64,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-
 
+      - run: make envars-webhook
+
       - id: docker-tags
         uses: docker/metadata-action@v4
         with:
@@ -94,7 +91,7 @@ jobs:
         id: docker-build
         with:
           context: ./
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
