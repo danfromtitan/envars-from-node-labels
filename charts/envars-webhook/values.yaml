@@ -79,3 +79,6 @@ webhook:
     ingester: false
     prober: false
     store-gateway: false
+
+  # Defines how unrecognized errors and timeout errors from the admission webhook are handled. Allowed values are Ignore or Fail.
+  failurePolicy: Fail
