@@ -132,6 +132,8 @@ jobs:
 
   chart:
     needs: changes
+    permissions:
+      contents: write
     if: |
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.chart == 'true')
