@@ -5,4 +5,4 @@ home: "https://github.com/danfromtitan/envars-from-node-labels"
 sources: ["https://github.com/danfromtitan/envars-from-node-labels"]
 type: application
 appVersion: "0.1.0"
-version: 0.2.1
+version: 0.2.2

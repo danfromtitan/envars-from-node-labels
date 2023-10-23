@@ -10,7 +10,7 @@ metadata:
 webhooks:
   - name: {{ include "envars-webhook.name" . }}.{{ .Release.Namespace }}.svc
     admissionReviewVersions: ["v1"]
-    failurePolicy: Fail
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
     sideEffects: None
     timeoutSeconds: 30
     clientConfig:
