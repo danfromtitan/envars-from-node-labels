@@ -16,8 +16,6 @@ IMAGE_NAME = $$(basename `pwd`)
 
 IMAGE_URL  ?= "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest"
 NAMESPACE  ?= envhook
-TARGETOS   ?= linux
-TARGETARCH ?= amd64
 
 .DEFAULT_GOAL := image
 
@@ -25,14 +23,17 @@ deps:
 	TMPDIR=/var/tmp GO111MODULE=on go get -v ./...
 	go mod tidy
 
-envars-webhook: clean deps
-	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
+build: clean deps
+	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o target/envars-webhook_linux_amd64 ./cmd/envars-webhook
+
+build-all: clean deps
+	gox -osarch="darwin/arm64 linux/amd64 linux/arm64" -output="target/envars-webhook_{{.OS}}_{{.Arch}}/" ./cmd/envars-webhook
 
 clean:
 	go clean
-	rm -f envars-webhook
+	rm -rf target
 
-image: envars-webhook
+image: build
 	docker rmi $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest || true
 	docker build --no-cache -t $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest .
 
