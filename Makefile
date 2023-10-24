@@ -14,8 +14,10 @@ AWS_ACCOUNT_ID = $$(aws sts get-caller-identity --query Account --output text)
 AWS_REGION = $$(aws configure get region)
 IMAGE_NAME = $$(basename `pwd`)
 
-IMAGE_URL ?= "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest"
-NAMESPACE ?= "envhook"
+IMAGE_URL  ?= "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest"
+NAMESPACE  ?= "envhook"
+TARGETOS   ?= "linux"
+TARGETARCH ?= "amd64"
 
 .DEFAULT_GOAL := image
 
@@ -23,8 +25,12 @@ deps:
 	TMPDIR=/var/tmp GO111MODULE=on go get -v ./...
 	go mod tidy
 
-envars-webhook: deps
-	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
+envars-webhook: clean deps
+	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) go build -ldflags="-s -w" -o $@ ./cmd/envars-webhook
+
+clean:
+	go clean
+	rm -f envars-webhook
 
 image: envars-webhook
 	docker rmi $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest || true

@@ -48,6 +48,14 @@ jobs:
       (github.repository == 'danfromtitan/envars-from-node-labels') &&
       (needs.changes.outputs.build == 'true')
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        os: [darwin, linux]
+        exclude:
+          - arch: amd64
+            os: darwin
     outputs:
       image-tag: ${{ steps.image-output.outputs.image-tag }}
       image-name: ${{ steps.image-output.outputs.image-name }}
@@ -69,15 +77,13 @@ jobs:
           key: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ github.event.inputs.go-version }}-
 
-      - run: make envars-webhook
-
       - id: docker-tags
         uses: docker/metadata-action@v4
         with:
           images: |
             ghcr.io/danfromtitan/envars-from-node-labels
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'develop') }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -92,35 +98,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v3
-        id: docker-build-amd
-        with:
-          context: ./
-          platforms: linux/amd64
-          outputs: type=docker,push=false
-          tags: ${{ steps.docker-tags.outputs.tags }}
-          labels: ${{ steps.docker-tags.outputs.labels }}
-
-      - run: |
-          export GOARCH=arm64
-          make envars-webhook
-
-      - uses: docker/build-push-action@v3
-        id: docker-build-arm
-        with:
-          context: ./
-          platforms: linux/arm64
-          outputs: type=docker,push=false
-          tags: ${{ steps.docker-tags.outputs.tags }}
-          labels: ${{ steps.docker-tags.outputs.labels }}
+      - name: "Build go binary for ${{ matrix.os }}/${{ matrix.arch }}"
+        run: make envars-webhook
+        env:
+          TARGETOS: ${{ matrix.os }}
+          TARGETARCH: ${{ matrix.arch }}
 
       - uses: docker/build-push-action@v3
         id: docker-build
         with:
           context: ./
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
           push: ${{ github.event_name != 'pull_request' }}
-          outputs: type=image,push=true
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
 
