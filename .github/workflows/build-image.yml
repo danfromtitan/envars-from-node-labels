@@ -20,6 +20,7 @@ jobs:
       test: ${{ steps.filter.outputs.test }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -48,7 +49,6 @@ jobs:
       image-digest: ${{ steps.image-output.outputs.image-digest }}
 
     steps:
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v4
@@ -107,7 +107,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -138,91 +137,95 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
 
-    - uses: medyagh/setup-minikube@master
-      id: minikube
-      with:
-        minikube-version: 1.23.2
-        driver: docker
-        container-runtime: containerd
-        kubernetes-version: v1.22.10
+      - uses: CodingNagger/minikube-setup-action@v1
+        id: minikube
+        with:
+          k8s-version: v1.28
+          minikube-version: 1.31.2
+          minikube-platform: amd64
 
-    - uses: actions/checkout@v4
+      - name: Launch minikube
+        run: eval ${{ steps.minikube.outputs.launcher }}
 
-    - name: setup helm
-      run: |
-        curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-        helm repo add envars-webhook https://danfromtitan.github.io/envars-from-node-labels/
-        helm repo update
-        helm search repo envars-webhook -l
+      - name: Check minikube pods
+        run: kubectl get pods
 
-    - name: deploy webhook
-      timeout-minutes: 2
-      env:
-        NAMESPACE: webtest
-      run: |
-        IMAGE_TAG=latest
-        [[ "${{contains(needs.build.result, 'success') }}" == "true" ]] && IMAGE_TAG=${{ needs.build.outputs.image-tag }}
-        helm install -n $NAMESPACE --create-namespace envars-webhook envars-webhook/envars-webhook --set image.tag="$IMAGE_TAG" \
-          --set webhook.containersAllowed.ingester=true,webhook.containersAllowed.prober=true,webhook.containersAllowed.store-gateway=true
-        until kubectl get pods -n $NAMESPACE | grep "Running" > /dev/null; do
-          kubectl get pods -n $NAMESPACE | tail -n +2
-          sleep 1
-        done
+      - name: setup helm
+        run: |
+          curl -s https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+          helm repo add envars-webhook https://danfromtitan.github.io/envars-from-node-labels/
+          helm repo update
+          helm search repo envars-webhook -l
 
-    - name: stage samples
-      run: |
-        make sample
+      - name: deploy webhook
+        timeout-minutes: 2
+        env:
+          NAMESPACE: webtest
+        run: |
+          IMAGE_TAG=latest
+          [[ "${{contains(needs.build.result, 'success') }}" == "true" ]] && IMAGE_TAG=${{ needs.build.outputs.image-tag }}
+          helm install -n $NAMESPACE --create-namespace envars-webhook envars-webhook/envars-webhook --set image.tag="$IMAGE_TAG" \
+            --set webhook.containersAllowed.ingester=true,webhook.containersAllowed.prober=true,webhook.containersAllowed.store-gateway=true
+          until kubectl get pods -n $NAMESPACE | grep "Running" > /dev/null; do
+            kubectl get pods -n $NAMESPACE | tail -n +2
+            sleep 1
+          done
 
-    - name: verify pod-allowed
-      timeout-minutes: 2
-      env:
-        NAMESPACE: samples
-      run: |
-        kubectl apply -f test/pod-allowed.yaml
-        until kubectl get pods -n $NAMESPACE | grep "pod-allowed" | grep "Completed" > /dev/null; do sleep 1; done
-        kubectl logs -n $NAMESPACE pod-allowed | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
+      - name: stage samples
+        run: |
+          make sample
 
-    - name: verify pod-excluded
-      timeout-minutes: 2
-      env:
-        NAMESPACE: samples
-      run: |
-        kubectl apply -f test/pod-excluded.yaml
-        until kubectl get pods -n $NAMESPACE | grep "pod-excluded" | grep "Completed" > /dev/null; do sleep 1; done
-        kubectl logs -n $NAMESPACE pod-excluded | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
+      - name: verify pod-allowed
+        timeout-minutes: 2
+        env:
+          NAMESPACE: samples
+        run: |
+          kubectl apply -f test/pod-allowed.yaml
+          until kubectl get pods -n $NAMESPACE | grep "pod-allowed" | grep "Completed" > /dev/null; do sleep 1; done
+          kubectl logs -n $NAMESPACE pod-allowed | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
 
-    - name: verify pod-mixed
-      timeout-minutes: 2
-      env:
-        NAMESPACE: samples
-      run: |
-        kubectl apply -f test/pod-mixed.yaml
-        until kubectl get pods -n $NAMESPACE | grep "pod-mixed" | grep "Completed" > /dev/null; do sleep 1; done
-        kubectl logs -n $NAMESPACE pod-mixed ingester | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
-        kubectl logs -n $NAMESPACE pod-mixed store-gateway | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
-        kubectl logs -n $NAMESPACE pod-mixed compactor | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
+      - name: verify pod-excluded
+        timeout-minutes: 2
+        env:
+          NAMESPACE: samples
+        run: |
+          kubectl apply -f test/pod-excluded.yaml
+          until kubectl get pods -n $NAMESPACE | grep "pod-excluded" | grep "Completed" > /dev/null; do sleep 1; done
+          kubectl logs -n $NAMESPACE pod-excluded | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
 
-    - name: verify deployment
-      timeout-minutes: 2
-      env:
-        NAMESPACE: samples
-      run: |
-        kubectl apply -f test/deployment.yaml
-        until [[ $(kubectl get pods -n $NAMESPACE | grep "deployment" | grep "Running" | wc -l) == "2" ]]; do sleep 1; done
-        for POD in $(kubectl get pods -n $NAMESPACE | grep "deployment" | awk '{print $1}'); do
-          kubectl logs -n $NAMESPACE $POD prober | grep "NODE_MINIKUBE_K8S_IO_NAME"
-          kubectl exec -n $NAMESPACE $POD -c ingester -- env | grep "NODE_MINIKUBE_K8S_IO_NAME"
-        done
+      - name: verify pod-mixed
+        timeout-minutes: 2
+        env:
+          NAMESPACE: samples
+        run: |
+          kubectl apply -f test/pod-mixed.yaml
+          until kubectl get pods -n $NAMESPACE | grep "pod-mixed" | grep "Completed" > /dev/null; do sleep 1; done
+          kubectl logs -n $NAMESPACE pod-mixed ingester | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
+          kubectl logs -n $NAMESPACE pod-mixed store-gateway | grep "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
+          kubectl logs -n $NAMESPACE pod-mixed compactor | grep -v "NODE_MINIKUBE_K8S_IO_NAME" > /dev/null
 
-    - name: verify statefulset
-      timeout-minutes: 2
-      env:
-        NAMESPACE: samples
-      run: |
-        kubectl apply -f test/statefulset.yaml
-        until [[ $(kubectl get pods -n $NAMESPACE | grep "statefulset" | grep "Running" | wc -l) == "2" ]]; do sleep 1; done
-        for POD in $(kubectl get pods -n $NAMESPACE | grep "statefulset" | awk '{print $1}'); do
-          kubectl logs -n $NAMESPACE $POD prober | grep "NODE_MINIKUBE_K8S_IO_NAME"
-          kubectl exec -n $NAMESPACE $POD -c store-gateway -- env | grep "NODE_MINIKUBE_K8S_IO_NAME"
-        done
+      - name: verify deployment
+        timeout-minutes: 2
+        env:
+          NAMESPACE: samples
+        run: |
+          kubectl apply -f test/deployment.yaml
+          until [[ $(kubectl get pods -n $NAMESPACE | grep "deployment" | grep "Running" | wc -l) == "2" ]]; do sleep 1; done
+          for POD in $(kubectl get pods -n $NAMESPACE | grep "deployment" | awk '{print $1}'); do
+            kubectl logs -n $NAMESPACE $POD prober | grep "NODE_MINIKUBE_K8S_IO_NAME"
+            kubectl exec -n $NAMESPACE $POD -c ingester -- env | grep "NODE_MINIKUBE_K8S_IO_NAME"
+          done
+
+      - name: verify statefulset
+        timeout-minutes: 2
+        env:
+          NAMESPACE: samples
+        run: |
+          kubectl apply -f test/statefulset.yaml
+          until [[ $(kubectl get pods -n $NAMESPACE | grep "statefulset" | grep "Running" | wc -l) == "2" ]]; do sleep 1; done
+          for POD in $(kubectl get pods -n $NAMESPACE | grep "statefulset" | awk '{print $1}'); do
+            kubectl logs -n $NAMESPACE $POD prober | grep "NODE_MINIKUBE_K8S_IO_NAME"
+            kubectl exec -n $NAMESPACE $POD -c store-gateway -- env | grep "NODE_MINIKUBE_K8S_IO_NAME"
+          done
