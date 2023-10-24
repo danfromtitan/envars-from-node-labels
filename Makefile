@@ -15,9 +15,9 @@ AWS_REGION = $$(aws configure get region)
 IMAGE_NAME = $$(basename `pwd`)
 
 IMAGE_URL  ?= "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest"
-NAMESPACE  ?= "envhook"
-TARGETOS   ?= "linux"
-TARGETARCH ?= "amd64"
+NAMESPACE  ?= envhook
+TARGETOS   ?= linux
+TARGETARCH ?= amd64
 
 .DEFAULT_GOAL := image
 
