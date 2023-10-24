@@ -104,12 +104,13 @@ jobs:
           TARGETOS: ${{ matrix.os }}
           TARGETARCH: ${{ matrix.arch }}
 
-      - uses: docker/build-push-action@v3
+      - uses: docker/build-push-action@v5
         id: docker-build
         with:
           context: ./
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
           push: ${{ github.event_name != 'pull_request' }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           tags: ${{ steps.docker-tags.outputs.tags }}
           labels: ${{ steps.docker-tags.outputs.labels }}
 
