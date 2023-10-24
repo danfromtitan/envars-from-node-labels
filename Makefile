@@ -10,9 +10,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-AWS_ACCOUNT_ID = $$(aws sts get-caller-identity --query Account --output text)
-AWS_REGION = $$(aws configure get region)
-IMAGE_NAME = $$(basename `pwd`)
+AWS_ACCOUNT_ID = $(shell aws sts get-caller-identity --query Account --output text)
+AWS_REGION = $(shell aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')
+IMAGE_NAME = $(shell basename `pwd`)
+TARGETOS = linux
+TARGETARCH=$(shell uname -m)
 
 IMAGE_URL  ?= "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest"
 NAMESPACE  ?= envhook
@@ -24,10 +26,10 @@ deps:
 	go mod tidy
 
 build: clean deps
-	TMPDIR=/var/tmp CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o target/envars-webhook_linux_amd64 ./cmd/envars-webhook
+	TMPDIR=/var/tmp CGO_ENABLED=0 GOARCH=$(TARGETARCH) go build -ldflags="-s -w" -o target/envars-webhook_$(TARGETOS)_$(TARGETARCH) ./cmd/envars-webhook
 
 build-all: clean deps
-	gox -osarch="darwin/arm64 linux/amd64 linux/arm64" -output="target/envars-webhook_{{.OS}}_{{.Arch}}/" ./cmd/envars-webhook
+	TMPDIR=/var/tmp CGO_ENABLED=0 gox -osarch="linux/amd64 linux/arm64" -ldflags="-s -w" -output="target/envars-webhook_{{.OS}}_{{.Arch}}/" ./cmd/envars-webhook
 
 clean:
 	go clean
@@ -35,7 +37,7 @@ clean:
 
 image: build
 	docker rmi $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest || true
-	docker build --no-cache -t $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest .
+	docker build --build-arg TARGETOS=$(TARGETOS) --no-cache -t $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(IMAGE_NAME):latest .
 
 push:
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com --password-stdin

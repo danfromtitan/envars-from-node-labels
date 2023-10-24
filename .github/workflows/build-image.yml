@@ -62,7 +62,7 @@ jobs:
           images: |
             ghcr.io/danfromtitan/envars-from-node-labels
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'develop') }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -85,7 +85,7 @@ jobs:
         id: docker-build
         with:
           context: ./
-          platforms: darwin/arm64,linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
