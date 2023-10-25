@@ -139,18 +139,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: CodingNagger/minikube-setup-action@v1
+      - uses: medyagh/setup-minikube@master
         id: minikube
         with:
-          k8s-version: v1.28
+          container-runtime: containerd
+          driver: docker
+          kubernetes-version: v1.28
           minikube-version: 1.31.2
-          minikube-platform: amd64
-
-      - name: Launch minikube
-        run: eval ${{ steps.minikube.outputs.launcher }}
 
       - name: Check minikube pods
-        run: kubectl get pods
+        run: kubectl get pods -A
 
       - name: setup helm
         run: |
